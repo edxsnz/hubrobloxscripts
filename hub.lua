@@ -8,8 +8,7 @@ task.wait(1) -- segurança extra
 -- Scripts por GAME ID (Universe)
 local scripts = {
     [994732206] = "https://rawscripts.net/raw/Blox-Fruits-Atherhub-Auto-Level-Auto-Raid-Auto-Boss-BEST-Script-79550",
-    [8321616508] = "https://rawscripts.net/raw/QOL-Rogue-Piece-BEST-SCRIPT-AUTO-FARM-AUTO-FISH-AUTO-SKILL-AUTO-ROLL-N-MORE-66148",
-    [] = ""
+    [8321616508] = "https://rawscripts.net/raw/QOL-Rogue-Piece-BEST-SCRIPT-AUTO-FARM-AUTO-FISH-AUTO-SKILL-AUTO-ROLL-N-MORE-66148"
 }
 
 -- Debug (opcional)
