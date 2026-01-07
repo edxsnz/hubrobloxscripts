@@ -9,7 +9,8 @@ task.wait(1) -- segurança extra
 local scripts = {
     [994732206] = "https://rawscripts.net/raw/Blox-Fruits-Atherhub-Auto-Level-Auto-Raid-Auto-Boss-BEST-Script-79550",
     [8321616508] = "https://rawscripts.net/raw/AIZEN-Rogue-Piece-OP-BEST-AUTO-INSTANT-KILL-AUTO-BOSS-60709",
-    [7326934954] = "https://rawscripts.net/raw/99-Nights-in-the-Forest-STRONGHOLDS-KEYLESS-auto-farm-bring-item-teleports-and-more-by-Moondiety-44416"
+    [7326934954] = "https://rawscripts.net/raw/99-Nights-in-the-Forest-STRONGHOLDS-KEYLESS-auto-farm-bring-item-teleports-and-more-by-Moondiety-44416",
+    [648454481] = "https://rawscripts.net/raw/DRAGON-+-SOUL-Grand-Piece-Online-Insta-kill-82749"
 }
 
 -- Debug (opcional)
