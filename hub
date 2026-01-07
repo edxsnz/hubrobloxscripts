@@ -8,7 +8,7 @@ task.wait(1) -- segurança extra
 -- Scripts por GAME ID (Universe)
 local scripts = {
     [994732206] = "https://rawscripts.net/raw/GRAVITY-Blox-Fruits-BEST-SCRIPT-SOLARA-AND-XENO-AUTO-V4-AUTO-LEVEL-AUTO-RAID-37566",
-    [8321616508] = "https://rawscripts.net/raw/AIZEN-Rogue-Piece-OP-BEST-AUTO-INSTANT-KILL-AUTO-BOSS-60709",
+    [8321616508] = "https://rawscripts.net/raw/ANTI-MAGIC-Rogue-Piece-Imp-X-82102",
     [7326934954] = "https://rawscripts.net/raw/Universal-Script-Rift-46927"
 }
 
