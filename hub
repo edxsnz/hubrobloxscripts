@@ -20,6 +20,14 @@ local scripts = {
     [2355999843] = { -- Salon de Fiestas
         "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
         "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
+    },
+    [7513986953] = { -- Step Music
+        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
+        "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
+    },
+    [7907925158] = { -- Myster
+        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
+        "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
     }
 }
 
