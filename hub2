@@ -110,8 +110,6 @@ local function main()
         
     else
         warn("⚠️ Jogo não suportado pelo hub")
-        warn("ID do jogo:", gameId)
-        warn("Nome do jogo:", game:GetService("MarketplaceService"):GetProductInfo(gameId).Name)
         
         -- FALLBACK: Injeta Infinite Yield quando o jogo não é suportado
         warn("🔄 Carregando Infinite Yield como fallback...")
