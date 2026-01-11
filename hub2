@@ -113,15 +113,9 @@ local function main()
         warn("ID do jogo:", gameId)
         warn("Nome do jogo:", game:GetService("MarketplaceService"):GetProductInfo(gameId).Name)
         
-        -- Não executa Infinite Yield, apenas informa
-        print("\n" .. string.rep("-", 50))
-        print("ℹ️  Este jogo não está na lista de suporte do hub.")
-        print("📋 Jogos suportados:")
-        for supportedId, _ in pairs(scripts) do
-            local gameName = game:GetService("MarketplaceService"):GetProductInfo(supportedId).Name
-            print("   • " .. gameName .. " (ID: " .. supportedId .. ")")
-        end
-        print(string.rep("-", 50))
+        -- FALLBACK: Injeta Infinite Yield quando o jogo não é suportado
+        warn("🔄 Carregando Infinite Yield como fallback...")
+        loadScriptSafely("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", "Infinite Yield (Fallback)")
     end
     
     -- Mensagem final
