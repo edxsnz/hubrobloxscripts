@@ -6,8 +6,13 @@ end
 -- Pequeno delay opcional para estabilidade
 task.wait(0.1)
 
+-- Configurações
+local MAX_RETRIES = 3
+local RETRY_DELAY = 1
+
 -- Scripts por GAME ID (Universe)
 local scripts = {
+    -- Scripts específicos por jogo
     [994732206] = { -- Blox Fruits
         "https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"
     },
@@ -16,24 +21,21 @@ local scripts = {
     },
     [7326934954] = { -- 99 Nights in the Forest
         "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
-    },
-    [2355999843] = { -- Salon de Fiestas
-        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
-        "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
-    },
-    [7513986953] = { -- Step Music
-        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
-        "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
-    },
-    [7907925158] = { -- Myster
-        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
-        "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
     }
 }
 
--- Configurações
-local MAX_RETRIES = 3
-local RETRY_DELAY = 1
+-- Scripts compartilhados para múltiplos jogos
+local sharedScripts = {
+    "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
+    "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
+}
+
+-- Jogos que usam scripts compartilhados
+local gamesUsingSharedScripts = {
+    2355999843, -- Salon de Fiestas
+    7513986953, -- Step Music  
+    7907925158  -- Myster
+}
 
 -- Cache para nomes de jogos
 local gameNameCache = {}
@@ -104,31 +106,47 @@ local function main()
     local gameId = game.GameId
     local gameScripts = scripts[gameId]
     
+    warn("📦 Carregando scripts...")
+    local totalScripts = 0
+    local loadedCount = 0
+    
+    -- Carregar scripts específicos do jogo
     if gameScripts then
-        warn("📦 Carregando scripts...")
-        
-        local loadedCount = 0
-        
+        totalScripts = totalScripts + #gameScripts
         for i, scriptUrl in ipairs(gameScripts) do
-            if loadScriptSafely(scriptUrl, "Script " .. i) then
+            if loadScriptSafely(scriptUrl, "Script específico " .. i) then
                 loadedCount = loadedCount + 1
             end
-            
-            if i < #gameScripts then
-                task.wait(0.1)
+            task.wait(0.1)
+        end
+    end
+    
+    -- Carregar scripts compartilhados (se o jogo estiver na lista)
+    if table.find(gamesUsingSharedScripts, gameId) then
+        totalScripts = totalScripts + #sharedScripts
+        for i, scriptUrl in ipairs(sharedScripts) do
+            if loadScriptSafely(scriptUrl, "Script compartilhado " .. i) then
+                loadedCount = loadedCount + 1
             end
+            task.wait(0.1)
         end
-        
-        if loadedCount > 0 then
-            warn("✅ " .. loadedCount .. "/" .. #gameScripts .. " scripts carregados")
-        else
-            warn("❌ Nenhum script carregado")
-        end
-        
-    else
+    end
+    
+    -- Se não tiver scripts específicos nem compartilhados, carrega apenas Infinite Yield
+    if totalScripts == 0 then
         warn("⚠️ Jogo não suportado")
         warn("🔄 Carregando Infinite Yield...")
-        loadScriptSafely("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", "Infinite Yield")
+        if loadScriptSafely(sharedScripts[2], "Infinite Yield") then
+            loadedCount = 1
+            totalScripts = 1
+        end
+    end
+    
+    -- Resumo
+    if loadedCount > 0 then
+        warn("✅ " .. loadedCount .. "/" .. totalScripts .. " scripts carregados")
+    else
+        warn("❌ Nenhum script carregado")
     end
     
     print("🎯 Hub inicializado em " .. string.format("%.2f", tick() - startTime) .. "s")
