@@ -3,14 +3,14 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-task.wait(0.5) -- Tempo reduzido para um carregamento mais rápido
+-- Pequeno delay opcional para estabilidade (0.1s é suficiente)
+task.wait(0.1)
 
 -- Scripts por GAME ID (Universe)
 -- Agora suporta múltiplos scripts por jogo
 local scripts = {
     [994732206] = { -- Blox Fruits
         "https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"
-        -- Adicione mais scripts aqui se necessário: "url2", "url3"
     },
     [8321616508] = { -- Rogue Piece
         "https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a"
@@ -118,14 +118,32 @@ local function main()
     
     -- Mensagem final
     print("\n🎯 Hub inicializado com sucesso!")
-    print("⏱️  Tempo de inicialização: " .. tostring(tick() - startTime):sub(1, 5) .. "s")
+    print("⏱️  Tempo de inicialização: " .. string.format("%.2f", tick() - startTime) .. "s")
+end
+
+-- Verificação adicional para garantir que os serviços estejam carregados
+local function waitForServices()
+    local maxWait = 10
+    local start = tick()
+    
+    while tick() - start < maxWait do
+        if game:GetService("Players").LocalPlayer then
+            return true
+        end
+        task.wait(0.1)
+    end
+    return false
 end
 
 -- Inicialização com tratamento de erros
-local success, err = pcall(main)
-
-if not success then
-    warn("❌ Erro crítico no hub:")
-    warn(err)
-    print("🔄 Tente reiniciar o jogo")
+if waitForServices() then
+    local success, err = pcall(main)
+    
+    if not success then
+        warn("❌ Erro crítico no hub:")
+        warn(err)
+        print("🔄 Tente reiniciar o jogo")
+    end
+else
+    warn("❌ Falha ao carregar serviços do jogo")
 end
