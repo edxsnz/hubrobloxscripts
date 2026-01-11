@@ -17,9 +17,12 @@ local scripts = {
     },
     [7326934954] = { -- 99 nights in florest
         "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
-    }
+    },
     [2355999843] = { -- salão de festas
-        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"
+        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
+        "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
+    },
+    [65241] = { -- natural disaster survival
         "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
     }
     -- Adicione outros jogos aqui
@@ -68,6 +71,8 @@ local function showBanner()
     print("📅 " .. os.date("%d/%m/%Y %H:%M:%S"))
     print(string.rep("=", 50) .. "\n")
 end
+
+local startTime = tick()
 
 -- Função principal
 local function main()
@@ -125,7 +130,6 @@ local function main()
 end
 
 -- Inicialização com tratamento de erros
-local startTime = tick()
 local success, err = pcall(main)
 
 if not success then
