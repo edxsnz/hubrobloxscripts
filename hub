@@ -4,7 +4,7 @@ if not game:IsLoaded() then
 end
 
 -- Pequeno delay opcional para estabilidade
-task.wait(0.1)
+task.wait(2)
 
 -- Configurações
 local MAX_RETRIES = 3
@@ -110,35 +110,46 @@ local function main()
     local totalScripts = 0
     local loadedCount = 0
     
-    -- Carregar scripts específicos do jogo
+    -- CASO 1: Jogo tem scripts específicos
     if gameScripts then
-        totalScripts = totalScripts + #gameScripts
+        totalScripts = #gameScripts
         for i, scriptUrl in ipairs(gameScripts) do
             if loadScriptSafely(scriptUrl, "Script específico " .. i) then
                 loadedCount = loadedCount + 1
             end
             task.wait(0.1)
         end
-    end
+        
+        warn("🎯 Scripts específicos para " .. getGameName(game.PlaceId))
     
-    -- Carregar scripts compartilhados (se o jogo estiver na lista)
-    if table.find(gamesUsingSharedScripts, gameId) then
-        totalScripts = totalScripts + #sharedScripts
+    -- CASO 2: Jogo está na lista de scripts compartilhados
+    elseif table.find(gamesUsingSharedScripts, gameId) then
+        totalScripts = #sharedScripts
         for i, scriptUrl in ipairs(sharedScripts) do
             if loadScriptSafely(scriptUrl, "Script compartilhado " .. i) then
                 loadedCount = loadedCount + 1
             end
             task.wait(0.1)
         end
-    end
+        
+        warn("🔄 Scripts compartilhados carregados")
     
-    -- Se não tiver scripts específicos nem compartilhados, carrega apenas Infinite Yield
-    if totalScripts == 0 then
+    -- CASO 3: Jogo não suportado - carrega apenas Infinite Yield
+    else
         warn("⚠️ Jogo não suportado")
         warn("🔄 Carregando Infinite Yield...")
+        
+        -- Carrega apenas o Infinite Yield (que está na posição 2)
         if loadScriptSafely(sharedScripts[2], "Infinite Yield") then
             loadedCount = 1
             totalScripts = 1
+        else
+            -- Fallback: tenta carregar direto
+            warn("🔄 Tentando carregar Infinite Yield alternativo...")
+            if loadScriptSafely("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", "Infinite Yield (Fallback)") then
+                loadedCount = 1
+                totalScripts = 1
+            end
         end
     end
     
