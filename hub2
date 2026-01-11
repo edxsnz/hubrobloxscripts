@@ -8,17 +8,17 @@ task.wait(0.5) -- Tempo reduzido para um carregamento mais rápido
 -- Scripts por GAME ID (Universe)
 -- Agora suporta múltiplos scripts por jogo
 local scripts = {
-    [994732206] = {
+    [994732206] = { -- Blox Fruits
         "https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"
         -- Adicione mais scripts aqui se necessário: "url2", "url3"
     },
-    [8321616508] = {
+    [8321616508] = { -- Rogue Piece
         "https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a"
     },
-    [7326934954] = {
+    [7326934954] = { -- 99 nights in florest
         "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
     }
-    [2355999843] = {
+    [2355999843] = { -- salão de festas
         "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"
         "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
     }
