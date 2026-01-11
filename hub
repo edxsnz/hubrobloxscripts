@@ -4,7 +4,7 @@ if not game:IsLoaded() then
 end
 
 -- Pequeno delay opcional para estabilidade
-task.wait(2)
+task.wait(5)
 
 -- Configurações
 local MAX_RETRIES = 3
@@ -34,7 +34,8 @@ local sharedScripts = {
 local gamesUsingSharedScripts = {
     2355999843, -- Salon de Fiestas
     7513986953, -- Step Music  
-    7907925158  -- Myster
+    7907925158, -- Myster
+    2977417782 -- Snow Party
 }
 
 -- Cache para nomes de jogos
