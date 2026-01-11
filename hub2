@@ -1,0 +1,135 @@
+-- Aguarda o jogo carregar completamente
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+task.wait(0.5) -- Tempo reduzido para um carregamento mais rápido
+
+-- Scripts por GAME ID (Universe)
+-- Agora suporta múltiplos scripts por jogo
+local scripts = {
+    [994732206] = {
+        "https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"
+        -- Adicione mais scripts aqui se necessário: "url2", "url3"
+    },
+    [8321616508] = {
+        "https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a"
+    },
+    [7326934954] = {
+        "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
+    }
+    [2355999843] = {
+        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"
+        "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
+    }
+    -- Adicione outros jogos aqui
+}
+
+-- Configurações
+local MAX_RETRIES = 3  -- Número máximo de tentativas se um script falhar
+local RETRY_DELAY = 1  -- Delay entre tentativas (segundos)
+
+-- Função para carregar um script com tratamento de erros
+local function loadScriptSafely(url, scriptName)
+    for attempt = 1, MAX_RETRIES do
+        local success, result = pcall(function()
+            return game:HttpGet(url, true)
+        end)
+        
+        if success then
+            local loadSuccess, loadResult = pcall(loadstring, result)
+            if loadSuccess then
+                loadResult()
+                warn("✅ Script carregado com sucesso:", scriptName or url)
+                return true
+            else
+                warn("⚠️ Erro ao executar script", scriptName or url, "| Tentativa", attempt, "/", MAX_RETRIES)
+                warn("Erro:", loadResult)
+            end
+        else
+            warn("⚠️ Falha ao baixar script", scriptName or url, "| Tentativa", attempt, "/", MAX_RETRIES)
+            warn("Erro:", result)
+        end
+        
+        if attempt < MAX_RETRIES then
+            task.wait(RETRY_DELAY)
+        end
+    end
+    return false
+end
+
+-- Banner de inicialização profissional
+local function showBanner()
+    print("\n" .. string.rep("=", 50))
+    print("🚀 GAME HUB PROFISSIONAL")
+    print("📊 Game ID: " .. game.GameId)
+    print("🎮 Place ID: " .. game.PlaceId)
+    print("👤 Player: " .. game.Players.LocalPlayer.Name)
+    print("📅 " .. os.date("%d/%m/%Y %H:%M:%S"))
+    print(string.rep("=", 50) .. "\n")
+end
+
+-- Função principal
+local function main()
+    showBanner()
+    
+    local gameId = game.GameId
+    local gameScripts = scripts[gameId]
+    
+    if gameScripts then
+        warn("🎮 Jogo detectado! Carregando scripts...")
+        
+        -- Contador de scripts carregados
+        local loadedCount = 0
+        
+        -- Carrega todos os scripts para este jogo
+        for i, scriptUrl in ipairs(gameScripts) do
+            warn(string.format("📦 Carregando script %d/%d...", i, #gameScripts))
+            
+            if loadScriptSafely(scriptUrl, "Script " .. i) then
+                loadedCount = loadedCount + 1
+            end
+            
+            -- Pequeno delay entre scripts para evitar sobrecarga
+            if i < #gameScripts then
+                task.wait(0.2)
+            end
+        end
+        
+        -- Resumo
+        if loadedCount > 0 then
+            warn(string.format("✅ %d/%d scripts carregados com sucesso!", loadedCount, #gameScripts))
+        else
+            warn("❌ Nenhum script pôde ser carregado")
+        end
+        
+    else
+        warn("⚠️ Jogo não suportado pelo hub")
+        warn("ID do jogo:", gameId)
+        warn("Nome do jogo:", game:GetService("MarketplaceService"):GetProductInfo(gameId).Name)
+        
+        -- Não executa Infinite Yield, apenas informa
+        print("\n" .. string.rep("-", 50))
+        print("ℹ️  Este jogo não está na lista de suporte do hub.")
+        print("📋 Jogos suportados:")
+        for supportedId, _ in pairs(scripts) do
+            local gameName = game:GetService("MarketplaceService"):GetProductInfo(supportedId).Name
+            print("   • " .. gameName .. " (ID: " .. supportedId .. ")")
+        end
+        print(string.rep("-", 50))
+    end
+    
+    -- Mensagem final
+    print("\n🎯 Hub inicializado com sucesso!")
+    print("⏱️  Tempo de inicialização: " .. tostring(tick() - startTime):sub(1, 5) .. "s")
+end
+
+-- Inicialização com tratamento de erros
+local startTime = tick()
+local success, err = pcall(main)
+
+if not success then
+    warn("❌ Erro crítico no hub:")
+    warn(err)
+    print("🔄 Tente reiniciar o jogo")
+end
