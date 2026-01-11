@@ -3,26 +3,149 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-task.wait(1) -- segurança extra
+-- Pequeno delay opcional para estabilidade
+task.wait(0.1)
 
 -- Scripts por GAME ID (Universe)
 local scripts = {
-    [994732206] = "https://rawscripts.net/raw/GRAVITY-Blox-Fruits-BEST-SCRIPT-SOLARA-AND-XENO-AUTO-V4-AUTO-LEVEL-AUTO-RAID-37566",
-    [8321616508] = "https://rawscripts.net/raw/SHIBUYA-ARC-Rogue-Piece-Script-84191",
-    [7326934954] = "https://rawscripts.net/raw/Universal-Script-Rift-46927"
+    [994732206] = { -- Blox Fruits
+        "https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"
+    },
+    [8321616508] = { -- Rogue Piece
+        "https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a"
+    },
+    [7326934954] = { -- 99 Nights in the Forest
+        "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
+    },
+    [2355999843] = { -- Salon de Fiestas
+        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
+        "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
+    }
 }
 
--- Debug (opcional)
-warn("GameId detectado:", game.GameId)
+-- Configurações
+local MAX_RETRIES = 3
+local RETRY_DELAY = 1
 
-local url = scripts[game.GameId]
+-- Cache para nomes de jogos
+local gameNameCache = {}
 
-if url then
-    warn("Script do jogo encontrado, carregando...")
-    loadstring(game:HttpGet(url))()
+-- Função para obter o nome do jogo pelo PlaceId
+local function getGameName(placeId)
+    if gameNameCache[placeId] then
+        return gameNameCache[placeId]
+    end
+    
+    local success, result = pcall(function()
+        return game:GetService("MarketplaceService"):GetProductInfo(placeId).Name
+    end)
+    
+    if success then
+        gameNameCache[placeId] = result
+        return result
+    end
+    
+    return "Unknown Game"
+end
+
+-- Função para carregar um script com tratamento de erros
+local function loadScriptSafely(url, scriptName)
+    for attempt = 1, MAX_RETRIES do
+        local success, result = pcall(function()
+            return game:HttpGet(url, true)
+        end)
+        
+        if success then
+            local loadSuccess, loadResult = pcall(loadstring, result)
+            if loadSuccess then
+                loadResult()
+                warn("✅ Script carregado:", scriptName or "Script")
+                return true
+            else
+                warn("⚠️ Erro ao executar", scriptName or "Script", "| Tentativa", attempt, "/", MAX_RETRIES)
+            end
+        else
+            warn("⚠️ Falha ao baixar", scriptName or "Script", "| Tentativa", attempt, "/", MAX_RETRIES)
+        end
+        
+        if attempt < MAX_RETRIES then
+            task.wait(RETRY_DELAY)
+        end
+    end
+    return false
+end
+
+-- Banner de inicialização simplificado
+local function showBanner()
+    local gameName = getGameName(game.PlaceId)
+    
+    print("\n" .. string.rep("=", 50))
+    print("🚀 GAME HUB")
+    print("🎮 " .. gameName)
+    print("👤 " .. game.Players.LocalPlayer.Name)
+    print("📅 " .. os.date("%H:%M:%S"))
+    print(string.rep("=", 50))
+end
+
+local startTime = tick()
+
+-- Função principal
+local function main()
+    showBanner()
+    
+    local gameId = game.GameId
+    local gameScripts = scripts[gameId]
+    
+    if gameScripts then
+        warn("📦 Carregando scripts...")
+        
+        local loadedCount = 0
+        
+        for i, scriptUrl in ipairs(gameScripts) do
+            if loadScriptSafely(scriptUrl, "Script " .. i) then
+                loadedCount = loadedCount + 1
+            end
+            
+            if i < #gameScripts then
+                task.wait(0.1)
+            end
+        end
+        
+        if loadedCount > 0 then
+            warn("✅ " .. loadedCount .. "/" .. #gameScripts .. " scripts carregados")
+        else
+            warn("❌ Nenhum script carregado")
+        end
+        
+    else
+        warn("⚠️ Jogo não suportado")
+        warn("🔄 Carregando Infinite Yield...")
+        loadScriptSafely("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", "Infinite Yield")
+    end
+    
+    print("🎯 Hub inicializado em " .. string.format("%.2f", tick() - startTime) .. "s")
+end
+
+-- Verificação de serviços
+local function waitForServices()
+    local maxWait = 5
+    local start = tick()
+    
+    while tick() - start < maxWait do
+        if game:GetService("Players").LocalPlayer then
+            return true
+        end
+        task.wait(0.1)
+    end
+    return false
+end
+
+-- Inicialização
+if waitForServices() then
+    local success, err = pcall(main)
+    if not success then
+        warn("❌ Erro no hub:", err)
+    end
 else
-    warn("Jogo não suportado, fallback executado")
-    loadstring(game:HttpGet(
-        "https://rawscripts.net/raw/Universal-Script-Infinite-Yield-modded-80479"
-    ))()
+    warn("❌ Serviços não carregados")
 end
