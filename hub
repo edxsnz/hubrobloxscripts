@@ -21,6 +21,9 @@ local scripts = {
     },
     [7326934954] = { -- 99 Nights in the Forest
         "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
+    },
+    [5750914919] = {
+        "https://api.luarmor.net/files/v3/loaders/d5ed1fbd4301b1d18d75153c5b47181d.lua"
     }
 }
 
