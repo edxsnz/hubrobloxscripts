@@ -14,16 +14,13 @@ local RETRY_DELAY = 1
 local scripts = {
     -- Scripts específicos por jogo
     [994732206] = { -- Blox Fruits
-        ""
+        "https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"
     },
     [8321616508] = { -- Rogue Piece
-        ""
+        "https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a"
     },
     [7326934954] = { -- 99 Nights in the Forest
-        ""
-    },
-    [5750914919] = { -- Fisch
-        ""
+        "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
     }
 }
 
