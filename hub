@@ -14,16 +14,16 @@ local RETRY_DELAY = 1
 local scripts = {
     -- Scripts específicos por jogo
     [994732206] = { -- Blox Fruits
-        "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
+        ""
     },
     [8321616508] = { -- Rogue Piece
-        "https://raw.githubusercontent.com/OhhMyGehlee/sh/refs/heads/main/a"
+        ""
     },
     [7326934954] = { -- 99 Nights in the Forest
-        "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
+        ""
     },
     [5750914919] = { -- Fisch
-        "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
+        ""
     }
 }
 
