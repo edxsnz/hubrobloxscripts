@@ -34,8 +34,7 @@ local sharedScripts = {
 local gamesUsingSharedScripts = {
     2355999843, -- Salon de Fiestas
     7513986953, -- Step Music  
-    7907925158, -- Myster
-    2977417782 -- Snow Party
+    7907925158  -- Myster
 }
 
 -- Cache para nomes de jogos
