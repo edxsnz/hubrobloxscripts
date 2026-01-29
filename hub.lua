@@ -4,7 +4,7 @@ if not game:IsLoaded() then
 end
 
 -- Pequeno delay opcional para estabilidade
-task.wait(20)
+task.wait(10)
 
 -- Configurações
 local MAX_RETRIES = 3
@@ -90,7 +90,7 @@ local function showBanner()
     local gameName = getGameName(game.PlaceId)
     
     print("\n" .. string.rep("=", 50))
-    print("🚀 GAME HUB (0.1)")
+    print("🚀 GAME HUB (0.2)")
     print("🎮 " .. gameName)
     print("👤 " .. game.Players.LocalPlayer.Name)
     print("📅 " .. os.date("%H:%M:%S"))
