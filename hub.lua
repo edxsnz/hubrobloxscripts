@@ -4,7 +4,7 @@ if not game:IsLoaded() then
 end
 
 -- Pequeno delay opcional para estabilidade
-task.wait(5)
+task.wait(20)
 
 -- Configurações
 local MAX_RETRIES = 3
