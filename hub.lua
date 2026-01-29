@@ -1,18 +1,15 @@
--- Aguarda o jogo carregar completamente
+-- Aguarda o jogo carregar
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- Pequeno delay opcional para estabilidade
 task.wait(10)
 
 -- Configurações
-local MAX_RETRIES = 3
-local RETRY_DELAY = 1
+local HUB_VERSION = "0.3"
 
--- Scripts por GAME ID (Universe)
+-- Scripts por GAME ID
 local scripts = {
-    -- Scripts específicos por jogo
     [994732206] = { -- Blox Fruits
         "https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"
     },
@@ -24,23 +21,23 @@ local scripts = {
     }
 }
 
--- Scripts compartilhados para múltiplos jogos
-local sharedScripts = {
-    "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
-    "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
-}
-
--- Jogos que usam scripts compartilhados
-local gamesUsingSharedScripts = {
+-- Jogos para scripts compartilhados
+local sharedGames = {
     2355999843, -- Salon de Fiestas
     7513986953, -- Step Music  
     7907925158 -- Myster
 }
 
+-- Scripts compartilhados
+local sharedScripts = {
+    "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
+    "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
+}
+
 -- Cache para nomes de jogos
 local gameNameCache = {}
 
--- Função para obter o nome do jogo pelo PlaceId
+-- Função para obter o nome do jogo
 local function getGameName(placeId)
     if gameNameCache[placeId] then
         return gameNameCache[placeId]
@@ -58,131 +55,46 @@ local function getGameName(placeId)
     return "Unknown Game"
 end
 
--- Função para carregar um script com tratamento de erros
-local function loadScriptSafely(url, scriptName)
-    for attempt = 1, MAX_RETRIES do
-        local success, result = pcall(function()
-            return game:HttpGet(url, true)
-        end)
-        
-        if success then
-            local loadSuccess, loadResult = pcall(loadstring, result)
-            if loadSuccess then
-                loadResult()
-                warn("✅ Script carregado:", scriptName or "Script")
-                return true
-            else
-                warn("⚠️ Erro ao executar", scriptName or "Script", "| Tentativa", attempt, "/", MAX_RETRIES)
-            end
-        else
-            warn("⚠️ Falha ao baixar", scriptName or "Script", "| Tentativa", attempt, "/", MAX_RETRIES)
-        end
-        
-        if attempt < MAX_RETRIES then
-            task.wait(RETRY_DELAY)
-        end
-    end
-    return false
-end
-
--- Banner de inicialização simplificado
+-- Banner de inicialização
 local function showBanner()
     local gameName = getGameName(game.PlaceId)
     
     print("\n" .. string.rep("=", 50))
-    print("🚀 GAME HUB (0.2)")
+    print("🚀 GAME HUB (" .. HUB_VERSION .. ")")
     print("🎮 " .. gameName)
     print("👤 " .. game.Players.LocalPlayer.Name)
     print("📅 " .. os.date("%H:%M:%S"))
     print(string.rep("=", 50))
 end
 
-local startTime = tick()
+-- Exibe o banner
+showBanner()
 
--- Função principal
-local function main()
-    showBanner()
-    
-    local gameId = game.GameId
-    local gameScripts = scripts[gameId]
-    
-    warn("📦 Carregando scripts...")
-    local totalScripts = 0
-    local loadedCount = 0
-    
-    -- CASO 1: Jogo tem scripts específicos
-    if gameScripts then
-        totalScripts = #gameScripts
-        for i, scriptUrl in ipairs(gameScripts) do
-            if loadScriptSafely(scriptUrl, "Script específico " .. i) then
-                loadedCount = loadedCount + 1
-            end
-            task.wait(0.1)
-        end
-        
-        warn("🎯 Scripts específicos para " .. getGameName(game.PlaceId))
-    
-    -- CASO 2: Jogo está na lista de scripts compartilhados
-    elseif table.find(gamesUsingSharedScripts, gameId) then
-        totalScripts = #sharedScripts
-        for i, scriptUrl in ipairs(sharedScripts) do
-            if loadScriptSafely(scriptUrl, "Script compartilhado " .. i) then
-                loadedCount = loadedCount + 1
-            end
-            task.wait(0.1)
-        end
-        
-        warn("🔄 Scripts compartilhados carregados")
-    
-    -- CASO 3: Jogo não suportado - carrega apenas Infinite Yield
-    else
-        warn("⚠️ Jogo não suportado")
-        warn("🔄 Carregando Infinite Yield...")
-        
-        -- Carrega apenas o Infinite Yield (que está na posição 2)
-        if loadScriptSafely(sharedScripts[2], "Infinite Yield") then
-            loadedCount = 1
-            totalScripts = 1
-        else
-            -- Fallback: tenta carregar direto
-            warn("🔄 Tentando carregar Infinite Yield alternativo...")
-            if loadScriptSafely("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", "Infinite Yield (Fallback)") then
-                loadedCount = 1
-                totalScripts = 1
-            end
-        end
-    end
-    
-    -- Resumo
-    if loadedCount > 0 then
-        warn("✅ " .. loadedCount .. "/" .. totalScripts .. " scripts carregados")
-    else
-        warn("❌ Nenhum script carregado")
-    end
-    
-    print("🎯 Hub inicializado em " .. string.format("%.2f", tick() - startTime) .. "s")
+-- Função para executar script
+local function runScript(url)
+    local content = game:HttpGet(url)
+    loadstring(content)()
 end
 
--- Verificação de serviços
-local function waitForServices()
-    local maxWait = 5
-    local start = tick()
-    
-    while tick() - start < maxWait do
-        if game:GetService("Players").LocalPlayer then
-            return true
-        end
-        task.wait(0.1)
-    end
-    return false
-end
+-- Executa scripts baseado no jogo
+local gameId = game.GameId
 
--- Inicialização
-if waitForServices() then
-    local success, err = pcall(main)
-    if not success then
-        warn("❌ Erro no hub:", err)
+if scripts[gameId] then
+    print("🎯 Executando scripts específicos...")
+    for _, url in ipairs(scripts[gameId]) do
+        pcall(runScript, url)
+    end
+elseif table.find(sharedGames, gameId) then
+    print("🔄 Executando scripts compartilhados...")
+    for _, url in ipairs(sharedScripts) do
+        pcall(runScript, url)
     end
 else
-    warn("❌ Serviços não carregados")
+    print("⚠️ Jogo não suportado - Executando Infinite Yield...")
+    -- Infinite Yield como fallback
+    pcall(runScript, "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
 end
+
+-- Finaliza o script
+print("✅ Scripts injetados com sucesso!")
+return
