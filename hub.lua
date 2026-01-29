@@ -90,7 +90,7 @@ local function showBanner()
     local gameName = getGameName(game.PlaceId)
     
     print("\n" .. string.rep("=", 50))
-    print("🚀 GAME HUB")
+    print("🚀 GAME HUB (0.1)")
     print("🎮 " .. gameName)
     print("👤 " .. game.Players.LocalPlayer.Name)
     print("📅 " .. os.date("%H:%M:%S"))
