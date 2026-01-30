@@ -32,7 +32,7 @@ local function waitForGameToFullyLoad()
     print("✓ Fase 4/4: Interface carregada")
     
     -- 5. Espera adicional para scripts de inicialização
-    task.wait(2)
+    task.wait(5)
     
     print("✅ Jogo completamente carregado!")
     return true
@@ -42,7 +42,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.5"
+local HUB_VERSION = "0.5.1"
 local SCRIPT_DELAY = 1 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
