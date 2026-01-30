@@ -3,11 +3,11 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-task.wait(10)
+task.wait(5)
 
 -- Configurações
 local HUB_VERSION = "0.2"
-local SCRIPT_DELAY = 5 -- Delay de 5 segundos entre scripts
+local SCRIPT_DELAY = 1 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
 local scripts = {
