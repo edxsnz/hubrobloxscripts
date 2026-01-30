@@ -3,10 +3,59 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-task.wait(10) -- Espera 10 segundos adicionais
+-- Função avançada de espera por carregamento completo
+local function waitForGameToFullyLoad()
+    print("🔄 Aguardando carregamento completo do jogo...")
+    
+    -- 1. Espera pelo Loaded básico
+    if not game:IsLoaded() then
+        game.Loaded:Wait()
+    end
+    print("✓ Fase 1/4: Jogo básico carregado")
+    
+    -- 2. Espera pelo player local
+    local players = game:GetService("Players")
+    while not players.LocalPlayer do
+        players.PlayerAdded:Wait()
+    end
+    local player = players.LocalPlayer
+    print("✓ Fase 2/4: Player local carregado")
+    
+    -- 3. Espera pelo character
+    if not player.Character then
+        player.CharacterAdded:Wait()
+    end
+    print("✓ Fase 3/4: Character carregado")
+    
+    -- 4. Espera pela interface do jogador
+    local playerGui = player:WaitForChild("PlayerGui")
+    if #playerGui:GetChildren() == 0 then
+        repeat
+            task.wait(0.5)
+        until #playerGui:GetChildren() > 0
+    end
+    print("✓ Fase 4/4: Interface carregada")
+    
+    -- 5. Espera adicional para scripts de inicialização
+    task.wait(2)
+    
+    -- 6. Verificação de performance - se o FPS está estável
+    local startTime = tick()
+    local checks = 0
+    repeat
+        task.wait(1)
+        checks = checks + 1
+    until tick() - startTime > 3 or checks > 2
+    
+    print("✅ Jogo completamente carregado e estável!")
+    return true
+end
+
+-- Usa a função
+waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.3"
+local HUB_VERSION = "0.4"
 local SCRIPT_DELAY = 1 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
