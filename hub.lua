@@ -47,7 +47,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.7"
+local HUB_VERSION = "0.8"
 local SCRIPT_DELAY = 1 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
@@ -68,13 +68,14 @@ local sharedGames = {
     2355999843, -- Salon de Fiestas
     7513986953, -- Step Music  
     7907925158, -- Myster
-    2977417782 -- Snow Party
+    2977417782, -- Snow Party
+    9090968990  -- Star Rave
 }
 
 -- Scripts compartilhados
 local sharedScripts = {
-    "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
-    "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
+    "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
+    "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"
 }
 
 -- Cache para nomes de jogos
