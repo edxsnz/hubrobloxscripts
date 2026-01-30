@@ -1,8 +1,3 @@
--- Aguarda o jogo carregar
-if not game:IsLoaded() then
-    game.Loaded:Wait()
-end
-
 -- Função avançada de espera por carregamento completo
 local function waitForGameToFullyLoad()
     print("🔄 Aguardando carregamento completo do jogo...")
@@ -39,23 +34,15 @@ local function waitForGameToFullyLoad()
     -- 5. Espera adicional para scripts de inicialização
     task.wait(2)
     
-    -- 6. Verificação de performance - se o FPS está estável
-    local startTime = tick()
-    local checks = 0
-    repeat
-        task.wait(1)
-        checks = checks + 1
-    until tick() - startTime > 3 or checks > 2
-    
-    print("✅ Jogo completamente carregado e estável!")
+    print("✅ Jogo completamente carregado!")
     return true
 end
 
--- Usa a função
+-- Usa a função para aguardar carregamento completo
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.4"
+local HUB_VERSION = "0.5"
 local SCRIPT_DELAY = 1 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
