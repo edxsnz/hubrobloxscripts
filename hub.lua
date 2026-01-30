@@ -1,6 +1,6 @@
 -- Delay inicial para verificar se há troca de place
-print("⏳ Aguardando 15 segundos para verificar possível troca de place...")
-task.wait(15)
+print("⏳ Aguardando 10 segundos para verificar possível troca de place...")
+task.wait(10)
 print("✅ Iniciando carregamento...")
 
 -- Função avançada de espera por carregamento completo
@@ -47,7 +47,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.6"
+local HUB_VERSION = "0.7"
 local SCRIPT_DELAY = 1 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
@@ -55,11 +55,11 @@ local scripts = {
     [994732206] = { -- Blox Fruits
         "https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"
     },
-    [7671049560] = { -- The Forge
-        "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
-    },
     [7326934954] = { -- 99 Nights in the Forest
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
+    },
+    [7671049560] = { -- The Forge
+        "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
     }
 }
 
