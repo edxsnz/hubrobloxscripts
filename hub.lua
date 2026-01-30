@@ -3,10 +3,10 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-task.wait(5)
+task.wait(10) -- Espera 10 segundos adicionais
 
 -- Configurações
-local HUB_VERSION = "0.2"
+local HUB_VERSION = "0.3"
 local SCRIPT_DELAY = 1 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
@@ -26,7 +26,8 @@ local scripts = {
 local sharedGames = {
     2355999843, -- Salon de Fiestas
     7513986953, -- Step Music  
-    7907925158 -- Myster
+    7907925158, -- Myster
+    2977417782 -- Snow Party
 }
 
 -- Scripts compartilhados
