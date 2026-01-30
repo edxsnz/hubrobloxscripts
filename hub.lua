@@ -6,7 +6,7 @@ end
 task.wait(10)
 
 -- Configurações
-local HUB_VERSION = "0.1"
+local HUB_VERSION = "0.2"
 local SCRIPT_DELAY = 5 -- Delay de 5 segundos entre scripts
 
 -- Scripts por GAME ID
@@ -70,10 +70,7 @@ end
 
 -- Função para executar script com feedback
 local function runScript(url, scriptNumber, totalScripts)
-    local scriptName = url:match("([^/]+)$") or "Script"
-    
     print("📦 Executando script " .. scriptNumber .. "/" .. totalScripts .. "...")
-    print("📄 " .. scriptName)
     
     local success, errorMsg = pcall(function()
         local content = game:HttpGet(url)
