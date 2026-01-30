@@ -6,7 +6,8 @@ end
 task.wait(10)
 
 -- Configurações
-local HUB_VERSION = "0.3"
+local HUB_VERSION = "0.1"
+local SCRIPT_DELAY = 5 -- Delay de 5 segundos entre scripts
 
 -- Scripts por GAME ID
 local scripts = {
@@ -67,34 +68,62 @@ local function showBanner()
     print(string.rep("=", 50))
 end
 
+-- Função para executar script com feedback
+local function runScript(url, scriptNumber, totalScripts)
+    local scriptName = url:match("([^/]+)$") or "Script"
+    
+    print("📦 Executando script " .. scriptNumber .. "/" .. totalScripts .. "...")
+    print("📄 " .. scriptName)
+    
+    local success, errorMsg = pcall(function()
+        local content = game:HttpGet(url)
+        loadstring(content)()
+    end)
+    
+    if success then
+        print("✅ Script " .. scriptNumber .. "/" .. totalScripts .. " executado!")
+    else
+        print("❌ Erro no script " .. scriptNumber .. "/" .. totalScripts .. ": " .. errorMsg)
+    end
+    
+    -- Delay entre scripts
+    if scriptNumber < totalScripts then
+        print("⏳ Aguardando " .. SCRIPT_DELAY .. " segundos...")
+        task.wait(SCRIPT_DELAY)
+    end
+end
+
 -- Exibe o banner
 showBanner()
 
--- Função para executar script
-local function runScript(url)
-    local content = game:HttpGet(url)
-    loadstring(content)()
-end
-
 -- Executa scripts baseado no jogo
 local gameId = game.GameId
+local scriptList = {}
+local scriptType = ""
 
 if scripts[gameId] then
+    scriptList = scripts[gameId]
+    scriptType = "específicos"
     print("🎯 Executando scripts específicos...")
-    for _, url in ipairs(scripts[gameId]) do
-        pcall(runScript, url)
-    end
 elseif table.find(sharedGames, gameId) then
+    scriptList = sharedScripts
+    scriptType = "compartilhados"
     print("🔄 Executando scripts compartilhados...")
-    for _, url in ipairs(sharedScripts) do
-        pcall(runScript, url)
-    end
 else
+    scriptList = {"https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"}
+    scriptType = "fallback"
     print("⚠️ Jogo não suportado - Executando Infinite Yield...")
-    -- Infinite Yield como fallback
-    pcall(runScript, "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
+end
+
+-- Executa cada script com delay
+local totalScripts = #scriptList
+print("📊 Total de scripts a executar: " .. totalScripts)
+
+for i, url in ipairs(scriptList) do
+    runScript(url, i, totalScripts)
 end
 
 -- Finaliza o script
-print("✅ Scripts injetados com sucesso!")
-return
+print("\n" .. string.rep("=", 50))
+print("✅ " .. totalScripts .. " scripts " .. scriptType .. " injetados com sucesso!")
+print(string.rep("=", 50))
