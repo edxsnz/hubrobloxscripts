@@ -47,7 +47,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.8.2"
+local HUB_VERSION = "0.8.3"
 local SCRIPT_DELAY = 2 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
@@ -59,7 +59,7 @@ local scripts = {
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
     },
     [7671049560] = { -- The Forge
-        -- "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
+        "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
     }
 }
 
