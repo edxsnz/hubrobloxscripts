@@ -47,8 +47,8 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.8.1"
-local SCRIPT_DELAY = 1 -- Delay de 1 segundo entre scripts
+local HUB_VERSION = "0.8.2"
+local SCRIPT_DELAY = 2 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
 local scripts = {
