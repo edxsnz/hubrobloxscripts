@@ -47,7 +47,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.9"
+local HUB_VERSION = "0.8"
 local SCRIPT_DELAY = 1 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
@@ -74,8 +74,8 @@ local sharedGames = {
 
 -- Scripts compartilhados
 local sharedScripts = {
-    "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"--[[,
-    "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"]]
+    "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
+    "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"
 }
 
 -- Cache para nomes de jogos
