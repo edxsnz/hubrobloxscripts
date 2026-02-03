@@ -47,12 +47,12 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.8.3"
+local HUB_VERSION = "0.9"
 local SCRIPT_DELAY = 2 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
 local scripts = {
-    [994732206] = { -- Blox Fruits
+ --[[994732206] = { -- Blox Fruits
         "https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"
     },
     [7326934954] = { -- 99 Nights in the Forest
@@ -60,7 +60,7 @@ local scripts = {
     },
     [7671049560] = { -- The Forge
         "https://api.luarmor.net/files/v3/loaders/2529a5f9dfddd5523ca4e22f21cceffa.lua"
-    }
+    }]]
 }
 
 -- Jogos para scripts compartilhados
