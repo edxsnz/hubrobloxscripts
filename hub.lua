@@ -47,7 +47,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.0"
+local HUB_VERSION = "0.1.1"
 local SCRIPT_DELAY = 2 -- Delay de 1 segundo entre scripts
 
 -- Scripts por GAME ID
@@ -59,7 +59,7 @@ local scripts = {
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
     },
     [7671049560] = { -- The Forge
-        "https://rifton.top/loader.lua"
+        "https://lumin-hub.lol/loader.lua"
     }
 }
 
