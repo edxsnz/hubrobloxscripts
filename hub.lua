@@ -47,7 +47,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.5"
+local HUB_VERSION = "0.1.6"
 local SCRIPT_DELAY = 2 -- Delay de 2 segundos entre scripts
 
 -- Scripts por GAME ID
@@ -205,7 +205,12 @@ local function createSelectionGUI()
     createHoverEffect(miningButton, Color3.fromRGB(45, 80, 130), Color3.fromRGB(60, 100, 160))
     createHoverEffect(bossButton, Color3.fromRGB(130, 45, 60), Color3.fromRGB(160, 60, 80))
     
-    screenGui.Parent = playerGui
+local parentGui =
+    (gethui and gethui())
+    or game:GetService("CoreGui")
+    or playerGui
+
+screenGui.Parent = parentGui
     
     -- Retorna uma promise para aguardar a escolha
     local choiceMade = Instance.new("BindableEvent")
@@ -221,6 +226,8 @@ local function createSelectionGUI()
         choiceMade:Fire("bosses")
     end)
     
+print("🧪 GUI criada, aguardando escolha do usuário...")
+
     -- Aguarda a escolha
     local mode = choiceMade.Event:Wait()
     
