@@ -47,8 +47,8 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.3"
-local SCRIPT_DELAY = 2 -- Delay de 1 segundo entre scripts
+local HUB_VERSION = "0.1.4"
+local SCRIPT_DELAY = 2 -- Delay de 2 segundos entre scripts
 
 -- Scripts por GAME ID
 local scripts = {
@@ -59,7 +59,8 @@ local scripts = {
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
     },
     [7671049560] = { -- The Forge
-        "https://lumin-hub.lol/loader.lua"
+        "minerar" = "https://lumin-hub.lol/loader.lua",
+        "bosses" = "https://rifton.top/loader.lua"
     }
 }
 
@@ -99,6 +100,142 @@ local function getGameName(placeId)
     return "Unknown Game"
 end
 
+-- Função para criar GUI de escolha para The Forge
+local function createSelectionGUI()
+    local player = game:GetService("Players").LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    
+    -- Cria a tela de fundo
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "GameHubSelector"
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 400, 0, 250)
+    frame.Position = UDim2.new(0.5, -200, 0.5, -125)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    frame.BorderSizePixel = 0
+    frame.BackgroundTransparency = 0.1
+    frame.Active = true
+    frame.Draggable = true
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = frame
+    
+    -- Título
+    local title = Instance.new("TextLabel")
+    title.Text = "🎮 THE FORGE - ESCOLHA O MODO"
+    title.Size = UDim2.new(1, 0, 0, 50)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundTransparency = 1
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 20
+    title.Parent = frame
+    
+    -- Descrição
+    local desc = Instance.new("TextLabel")
+    desc.Text = "Escolha qual script deseja injetar:"
+    desc.Size = UDim2.new(1, 0, 0, 30)
+    desc.Position = UDim2.new(0, 0, 0, 50)
+    desc.BackgroundTransparency = 1
+    desc.TextColor3 = Color3.fromRGB(200, 200, 200)
+    desc.Font = Enum.Font.Gotham
+    desc.TextSize = 16
+    desc.Parent = frame
+    
+    -- Botão Minerar
+    local miningButton = Instance.new("TextButton")
+    miningButton.Name = "MiningButton"
+    miningButton.Text = "⛏️ MODO MINERAR\nUsar: https://lumin-hub.lol/loader.lua"
+    miningButton.Size = UDim2.new(0.9, 0, 0, 60)
+    miningButton.Position = UDim2.new(0.05, 0, 0, 100)
+    miningButton.BackgroundColor3 = Color3.fromRGB(45, 80, 130)
+    miningButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    miningButton.Font = Enum.Font.Gotham
+    miningButton.TextSize = 14
+    miningButton.TextWrapped = true
+    
+    local miningCorner = Instance.new("UICorner")
+    miningCorner.CornerRadius = UDim.new(0, 8)
+    miningCorner.Parent = miningButton
+    
+    miningButton.Parent = frame
+    
+    -- Botão Bosses
+    local bossButton = Instance.new("TextButton")
+    bossButton.Name = "BossButton"
+    bossButton.Text = "⚔️ MODO BOSSES\nUsar: https://rifton.top/loader.lua"
+    bossButton.Size = UDim2.new(0.9, 0, 0, 60)
+    bossButton.Position = UDim2.new(0.05, 0, 0, 170)
+    bossButton.BackgroundColor3 = Color3.fromRGB(130, 45, 60)
+    bossButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    bossButton.Font = Enum.Font.Gotham
+    bossButton.TextSize = 14
+    bossButton.TextWrapped = true
+    
+    local bossCorner = Instance.new("UICorner")
+    bossCorner.CornerRadius = UDim.new(0, 8)
+    bossCorner.Parent = bossButton
+    
+    bossButton.Parent = frame
+    
+    -- Adiciona efeitos de hover
+    local function createHoverEffect(button, normalColor, hoverColor)
+        button.MouseEnter:Connect(function()
+            game:GetService("TweenService"):Create(
+                button,
+                TweenInfo.new(0.2),
+                {BackgroundColor3 = hoverColor}
+            ):Play()
+        end)
+        
+        button.MouseLeave:Connect(function()
+            game:GetService("TweenService"):Create(
+                button,
+                TweenInfo.new(0.2),
+                {BackgroundColor3 = normalColor}
+            ):Play()
+        end)
+    end
+    
+    createHoverEffect(miningButton, Color3.fromRGB(45, 80, 130), Color3.fromRGB(60, 100, 160))
+    createHoverEffect(bossButton, Color3.fromRGB(130, 45, 60), Color3.fromRGB(160, 60, 80))
+    
+    screenGui.Parent = playerGui
+    
+    -- Retorna uma promise para aguardar a escolha
+    local choiceMade = Instance.new("BindableEvent")
+    local chosenUrl = ""
+    
+    miningButton.MouseButton1Click:Connect(function()
+        chosenUrl = scripts[7671049560]["minerar"]
+        choiceMade:Fire("minerar")
+    end)
+    
+    bossButton.MouseButton1Click:Connect(function()
+        chosenUrl = scripts[7671049560]["bosses"]
+        choiceMade:Fire("bosses")
+    end)
+    
+    -- Aguarda a escolha
+    local mode = choiceMade.Event:Wait()
+    
+    -- Animação de fechamento
+    game:GetService("TweenService"):Create(
+        frame,
+        TweenInfo.new(0.3),
+        {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}
+    ):Play()
+    
+    task.wait(0.3)
+    screenGui:Destroy()
+    
+    return {chosenUrl}, mode
+end
+
 -- Banner de inicialização
 local function showBanner()
     local gameName = getGameName(game.PlaceId)
@@ -112,8 +249,12 @@ local function showBanner()
 end
 
 -- Função para executar script com feedback
-local function runScript(url, scriptNumber, totalScripts)
-    print("📦 Executando script " .. scriptNumber .. "/" .. totalScripts .. "...")
+local function runScript(url, scriptNumber, totalScripts, scriptName)
+    if scriptName then
+        print("📦 Executando script " .. scriptNumber .. "/" .. totalScripts .. " (" .. scriptName .. ")...")
+    else
+        print("📦 Executando script " .. scriptNumber .. "/" .. totalScripts .. "...")
+    end
     
     local success, errorMsg = pcall(function()
         local content = game:HttpGet(url)
@@ -121,7 +262,11 @@ local function runScript(url, scriptNumber, totalScripts)
     end)
     
     if success then
-        print("✅ Script " .. scriptNumber .. "/" .. totalScripts .. " executado!")
+        if scriptName then
+            print("✅ Script " .. scriptNumber .. "/" .. totalScripts .. " executado! (" .. scriptName .. ")")
+        else
+            print("✅ Script " .. scriptNumber .. "/" .. totalScripts .. " executado!")
+        end
     else
         print("❌ Erro no script " .. scriptNumber .. "/" .. totalScripts .. ": " .. errorMsg)
     end
@@ -142,9 +287,16 @@ local scriptList = {}
 local scriptType = ""
 
 if scripts[gameId] then
-    scriptList = scripts[gameId]
-    scriptType = "específicos"
-    print("🎯 Executando scripts específicos...")
+    if gameId == 7671049560 then -- The Forge
+        print("🎯 The Forge detectado - Abrindo seletor...")
+        scriptList, selectedMode = createSelectionGUI()
+        scriptType = "específico (The Forge - Modo " .. selectedMode .. ")"
+    else
+        -- Outros jogos com scripts normais
+        scriptList = scripts[gameId]
+        scriptType = "específicos"
+    end
+    print("🎯 Executando scripts " .. scriptType .. "...")
 elseif table.find(sharedGames, gameId) then
     scriptList = sharedScripts
     scriptType = "compartilhados"
@@ -160,7 +312,11 @@ local totalScripts = #scriptList
 print("📊 Total de scripts a executar: " .. totalScripts)
 
 for i, url in ipairs(scriptList) do
-    runScript(url, i, totalScripts)
+    local scriptName = nil
+    if gameId == 7671049560 then
+        scriptName = selectedMode
+    end
+    runScript(url, i, totalScripts, scriptName)
 end
 
 -- Finaliza o script
