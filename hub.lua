@@ -47,7 +47,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.4"
+local HUB_VERSION = "0.1.5"
 local SCRIPT_DELAY = 2 -- Delay de 2 segundos entre scripts
 
 -- Scripts por GAME ID
@@ -59,9 +59,10 @@ local scripts = {
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
     },
     [7671049560] = { -- The Forge
-        "minerar" = "https://lumin-hub.lol/loader.lua",
-        "bosses" = "https://rifton.top/loader.lua"
-    }
+        ["minerar"] = "https://lumin-hub.lol/loader.lua",
+        ["bosses"] = "https://rifton.top/loader.lua"
+}
+
 }
 
 -- Jogos para scripts compartilhados
@@ -255,25 +256,29 @@ local function runScript(url, scriptNumber, totalScripts, scriptName)
     else
         print("📦 Executando script " .. scriptNumber .. "/" .. totalScripts .. "...")
     end
-    
+
     local success, errorMsg = pcall(function()
         local content = game:HttpGet(url)
-        loadstring(content)()
-    end)
-    
-    if success then
-        if scriptName then
-            print("✅ Script " .. scriptNumber .. "/" .. totalScripts .. " executado! (" .. scriptName .. ")")
-        else
-            print("✅ Script " .. scriptNumber .. "/" .. totalScripts .. " executado!")
+
+        if not content or content == "" then
+            error("HttpGet retornou vazio")
         end
+
+        local loader = loadstring or load
+        if not loader then
+            error("loadstring não está disponível neste executor")
+        end
+
+        loader(content)()
+    end)
+
+    if success then
+        print("✅ Script executado com sucesso!")
     else
-        print("❌ Erro no script " .. scriptNumber .. "/" .. totalScripts .. ": " .. errorMsg)
+        warn("❌ Falha ao executar script:", errorMsg)
     end
-    
-    -- Delay entre scripts
+
     if scriptNumber < totalScripts then
-        print("⏳ Aguardando " .. SCRIPT_DELAY .. " segundos...")
         task.wait(SCRIPT_DELAY)
     end
 end
