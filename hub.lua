@@ -9,17 +9,16 @@ local function waitForGameToFullyLoad()
     end
 
     local players = game:GetService("Players")
-    while not players.LocalPlayer do
-        players.PlayerAdded:Wait()
-    end
-    local player = players.LocalPlayer
+    local player = players.LocalPlayer or players.PlayerAdded:Wait()
 
     if not player.Character then
         player.CharacterAdded:Wait()
     end
 
     local playerGui = player:WaitForChild("PlayerGui")
-    repeat task.wait(0.5) until #playerGui:GetChildren() > 0
+    while #playerGui:GetChildren() == 0 do
+        task.wait(0.3) -- mais rápido que 0.5, sem impacto
+    end
 
     print("✅ Jogo completamente carregado!")
     return true
@@ -28,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.10"
+local HUB_VERSION = "0.1.11"
 local SCRIPT_DELAY = 2
 
 local scripts = {
