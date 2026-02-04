@@ -47,7 +47,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.6"
+local HUB_VERSION = "0.1.7"
 local SCRIPT_DELAY = 2 -- Delay de 2 segundos entre scripts
 
 -- Scripts por GAME ID
@@ -120,6 +120,7 @@ local function createSelectionGUI()
     frame.BackgroundTransparency = 0.1
     frame.Active = true
     frame.Draggable = true
+    frame.Parent = screenGui -- 🔥 ESSENCIAL
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 12)
