@@ -37,7 +37,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.9"
+local HUB_VERSION = "0.1.10"
 local SCRIPT_DELAY = 2 -- Delay de 2 segundos entre scripts
 
 -- Scripts por GAME ID
@@ -265,13 +265,24 @@ local function runScript(url, scriptNumber, totalScripts, scriptName)
             error("loadstring não está disponível neste executor")
         end
 
-        loader(content)()
+        -- EXECUÇÃO SEGURA (não bloqueia)
+        task.spawn(function()
+            local ok, execErr = pcall(function()
+                loader(content)()
+            end)
+
+            if ok then
+                print("✅ Script iniciado com sucesso (thread separada)")
+            else
+                warn("❌ Erro dentro do script:", execErr)
+            end
+        end)
     end)
 
     if success then
-        print("✅ Script executado com sucesso!")
+        print("🟢 Loader enviado para execução")
     else
-        warn("❌ Falha ao executar script:", errorMsg)
+        warn("❌ Falha ao carregar script:", errorMsg)
     end
 
     if scriptNumber < totalScripts then
