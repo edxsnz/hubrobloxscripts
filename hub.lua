@@ -1,17 +1,14 @@
 -- Delay inicial para verificar se há troca de place
-print("⏳ Aguardando 10 segundos para verificar possível troca de place...")
 task.wait(10)
 print("✅ Iniciando carregamento...")
 
 -- Função avançada de espera por carregamento completo
 local function waitForGameToFullyLoad()
-    print("🔄 Aguardando carregamento completo do jogo...")
     
     -- 1. Espera pelo Loaded básico
     if not game:IsLoaded() then
         game.Loaded:Wait()
     end
-    print("✓ Fase 1/4: Jogo básico carregado")
     
     -- 2. Espera pelo player local
     local players = game:GetService("Players")
@@ -19,13 +16,11 @@ local function waitForGameToFullyLoad()
         players.PlayerAdded:Wait()
     end
     local player = players.LocalPlayer
-    print("✓ Fase 2/4: Player local carregado")
     
     -- 3. Espera pelo character
     if not player.Character then
         player.CharacterAdded:Wait()
     end
-    print("✓ Fase 3/4: Character carregado")
     
     -- 4. Espera pela interface do jogador
     local playerGui = player:WaitForChild("PlayerGui")
@@ -34,7 +29,6 @@ local function waitForGameToFullyLoad()
             task.wait(0.5)
         until #playerGui:GetChildren() > 0
     end
-    print("✓ Fase 4/4: Interface carregada")
     print("✅ Jogo completamente carregado!")
     return true
 end
@@ -43,7 +37,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.8"
+local HUB_VERSION = "0.1.9"
 local SCRIPT_DELAY = 2 -- Delay de 2 segundos entre scripts
 
 -- Scripts por GAME ID
@@ -207,8 +201,6 @@ local parentGui =
     or game:GetService("CoreGui")
     or playerGui
 
-print("🧪 GUI parentada em:", parentGui:GetFullName())
-
 screenGui.Parent = parentGui
     
     -- Retorna uma promise para aguardar a escolha
@@ -224,8 +216,6 @@ screenGui.Parent = parentGui
         chosenUrl = scripts[7671049560]["bosses"]
         choiceMade:Fire("bosses")
     end)
-    
-print("🧪 GUI criada, aguardando escolha do usuário...")
 
     -- Aguarda a escolha
     local mode = choiceMade.Event:Wait()
