@@ -35,10 +35,6 @@ local function waitForGameToFullyLoad()
         until #playerGui:GetChildren() > 0
     end
     print("✓ Fase 4/4: Interface carregada")
-    
-    -- 5. Espera adicional para scripts de inicialização
-    task.wait(2)
-    
     print("✅ Jogo completamente carregado!")
     return true
 end
@@ -47,7 +43,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.7"
+local HUB_VERSION = "0.1.8"
 local SCRIPT_DELAY = 2 -- Delay de 2 segundos entre scripts
 
 -- Scripts por GAME ID
@@ -210,6 +206,8 @@ local parentGui =
     (gethui and gethui())
     or game:GetService("CoreGui")
     or playerGui
+
+print("🧪 GUI parentada em:", parentGui:GetFullName())
 
 screenGui.Parent = parentGui
     
