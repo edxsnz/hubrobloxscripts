@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.13"
+local HUB_VERSION = "0.1.14"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
@@ -39,8 +39,8 @@ local scripts = {
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
     },
     [7671049560] = { -- The Forge
-        "https://lumin-hub.lol/loader.lua" 
       --"https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/theforge.lua"
+        "https://lumin-hub.lol/loader.lua" 
     }
 }
 
