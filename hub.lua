@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.14"
+local HUB_VERSION = "0.1.15"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
@@ -61,13 +61,13 @@ local sharedScripts = {
 
 -- Cache para nomes dos jogos
 local gameNameCache = {}
-local function getGameName(placeId)
-    if gameNameCache[placeId] then return gameNameCache[placeId] end
+local function getGameName(gameId)
+    if gameNameCache[gameId] then return gameNameCache[gameId] end
     local success, result = pcall(function()
-        return game:GetService("MarketplaceService"):GetProductInfo(placeId).Name
+        return game:GetService("MarketplaceService"):GetProductInfo(gameId).Name
     end)
     if success then
-        gameNameCache[placeId] = result
+        gameNameCache[gameId] = result
         return result
     end
     return "Unknown Game"
@@ -85,9 +85,17 @@ local function runScript(url, scriptNumber, totalScripts, scriptName)
         if not loader then error("Nenhum loader disponível") end
 
         task.spawn(function()
-            local ok, execErr = pcall(function() loader(content)() end)
-            if ok then print("✅ Script iniciado com sucesso (thread separada)") 
-            else warn("❌ Erro dentro do script:", execErr) end
+            local func = loader(content)
+            if func then
+                local ok, execErr = pcall(func)
+                if ok then
+                    print("✅ Script iniciado com sucesso (thread separada)")
+                else
+                    warn("❌ Erro dentro do script:", execErr)
+                end
+            else
+                warn("❌ Falha ao compilar script: loader retornou nil")
+            end
         end)
     end)
 
@@ -101,7 +109,7 @@ end
 local function showBanner()
     print("\n" .. string.rep("=", 50))
     print("🚀 GAME HUB (" .. HUB_VERSION .. ")")
-    print("🎮 " .. getGameName(game.PlaceId))
+    print("🎮 " .. getGameName(game.GameId))
     print("👤 " .. game.Players.LocalPlayer.Name)
     print("📅 " .. os.date("%H:%M:%S"))
     print(string.rep("=", 50))

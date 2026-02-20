@@ -105,21 +105,27 @@ local function createTheForgeMenu()
     local parentGui = (gethui and gethui()) or game:GetService("CoreGui") or playerGui
     screenGui.Parent = parentGui
 
-    -- Aguardar escolha do usuário
+    -- Aguardar escolha do usuário (proteção contra duplo clique)
     local choiceMade = Instance.new("BindableEvent")
     local chosenUrl = ""
+    local clicked = false
     
     miningButton.MouseButton1Click:Connect(function()
+        if clicked then return end
+        clicked = true
         chosenUrl = forgeScripts.minerar
         choiceMade:Fire("minerar")
     end)
     
     bossButton.MouseButton1Click:Connect(function()
+        if clicked then return end
+        clicked = true
         chosenUrl = forgeScripts.bosses
         choiceMade:Fire("bosses")
     end)
 
     local selectedMode = choiceMade.Event:Wait()
+    choiceMade:Destroy()
     
     -- Animação de saída
     TweenService:Create(frame, TweenInfo.new(0.3), {
