@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.15"
+local HUB_VERSION = "0.1.16"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
@@ -61,13 +61,13 @@ local sharedScripts = {
 
 -- Cache para nomes dos jogos
 local gameNameCache = {}
-local function getGameName(gameId)
-    if gameNameCache[gameId] then return gameNameCache[gameId] end
+local function getGameName(placeId)
+    if gameNameCache[placeId] then return gameNameCache[placeId] end
     local success, result = pcall(function()
-        return game:GetService("MarketplaceService"):GetProductInfo(gameId).Name
+        return game:GetService("MarketplaceService"):GetProductInfo(placeId).Name
     end)
     if success then
-        gameNameCache[gameId] = result
+        gameNameCache[placeId] = result
         return result
     end
     return "Unknown Game"
@@ -109,7 +109,7 @@ end
 local function showBanner()
     print("\n" .. string.rep("=", 50))
     print("🚀 GAME HUB (" .. HUB_VERSION .. ")")
-    print("🎮 " .. getGameName(game.GameId))
+    print("🎮 " .. getGameName(game.placeId))
     print("👤 " .. game.Players.LocalPlayer.Name)
     print("📅 " .. os.date("%H:%M:%S"))
     print(string.rep("=", 50))
