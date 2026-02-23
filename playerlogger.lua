@@ -164,7 +164,6 @@ local function buildContent(clan, isFinal)
     w("STATUS         : " .. (isFinal and "✔ GRAVAÇÃO FINALIZADA" or "⏺ GRAVANDO... (auto-save " .. timeOnly() .. ")"))
     if recStart then
         w("Duração sessão : " .. fmtDur(tick() - recStart))
-        w("Segundos       : " .. tostring(math.floor(tick() - recStart)) .. "s")
     end
     w("Início         : " .. (recStartTime or "--"))
     w("Fim            : " .. (isFinal and timeOnly() or "--"))
