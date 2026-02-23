@@ -171,17 +171,17 @@ local function logPlayer(player)
 
     totalLogged = totalLogged + 1
     loggedPlayers[player.UserId] = {
-        name = player.Name,
+        name = player.DisplayName,
         time = timeOnly(),
         idx  = totalLogged,
     }
     print(string.format("[CSI Logger] ✓ #%d — %s (ID: %d)",
-        totalLogged, player.Name, player.UserId))
+        totalLogged, player.DisplayName, player.UserId))
     saveFile(false)  -- grava imediatamente a cada novo membro
 end
 
 local function checkPlayer(player)
-    if player.Name:sub(1, #CFG.PREFIX):upper() == CFG.PREFIX:upper() then
+    if player.DisplayName:sub(1, #CFG.PREFIX):upper() == CFG.PREFIX:upper() then
         logPlayer(player)
     end
 end

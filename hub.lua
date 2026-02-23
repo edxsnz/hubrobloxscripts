@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.16"
+local HUB_VERSION = "0.1.17"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
@@ -57,6 +57,7 @@ local sharedGames = {
 local sharedScripts = {
     "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
     "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"
+    "https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/playerlogger.lua"
 }
 
 -- Cache para nomes dos jogos
