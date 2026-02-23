@@ -39,15 +39,15 @@ local scripts = {
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
     },
     [7671049560] = { -- The Forge
-      --"https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/theforge.lua"
-        "https://lumin-hub.lol/loader.lua" 
+        --"https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/theforge.lua"
+        "https://lumin-hub.lol/loader.lua"
     }
 }
 
 -- Jogos que compartilham os mesmos scripts
 local sharedGames = {
     2355999843, -- Salon de Fiestas
-    7513986953, -- Step Music  
+    7513986953, -- Step Music
     7907925158, -- Myster
     2977417782, -- Snow Party
     9090968990  -- Star Rave
@@ -56,7 +56,7 @@ local sharedGames = {
 -- Scripts compartilhados
 local sharedScripts = {
     "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
-    "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"
+    "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
     "https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/playerlogger.lua"
 }
 
@@ -76,7 +76,8 @@ end
 
 -- Função para executar script (compatível com Potassium/executores)
 local function runScript(url, scriptNumber, totalScripts, scriptName)
-    print("📦 Executando script " .. scriptNumber .. "/" .. totalScripts .. (scriptName and (" (" .. scriptName .. ")") or "") .. "...")
+    print("📦 Executando script " ..
+        scriptNumber .. "/" .. totalScripts .. (scriptName and (" (" .. scriptName .. ")") or "") .. "...")
 
     local success, errorMsg = pcall(function()
         local content = game:HttpGet(url)
@@ -100,8 +101,11 @@ local function runScript(url, scriptNumber, totalScripts, scriptName)
         end)
     end)
 
-    if success then print("🟢 Loader enviado para execução")
-    else warn("❌ Falha ao carregar script:", errorMsg) end
+    if success then
+        print("🟢 Loader enviado para execução")
+    else
+        warn("❌ Falha ao carregar script:", errorMsg)
+    end
 
     if scriptNumber < totalScripts then task.wait(SCRIPT_DELAY) end
 end
@@ -129,7 +133,7 @@ elseif table.find(sharedGames, gameId) then
     scriptList = sharedScripts
     scriptType = "compartilhados"
 else
-    scriptList = {"https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"}
+    scriptList = { "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source" }
     scriptType = "fallback"
 end
 

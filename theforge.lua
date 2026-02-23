@@ -7,13 +7,13 @@ print("⚙️ Carregando seletor do The Forge...")
 local function createTheForgeMenu()
     local player = game:GetService("Players").LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
-    
+
     -- Scripts disponíveis para The Forge
     local forgeScripts = {
         minerar = "https://lumin-hub.lol/loader.lua",
         bosses = "https://rifton.top/loader.lua"
     }
-    
+
     -- Criar a interface
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "TheForgeSelector"
@@ -88,16 +88,16 @@ local function createTheForgeMenu()
 
     -- Efeito hover
     local TweenService = game:GetService("TweenService")
-    
+
     local function createHoverEffect(button, normalColor, hoverColor)
         button.MouseEnter:Connect(function()
-            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+            TweenService:Create(button, TweenInfo.new(0.2), { BackgroundColor3 = hoverColor }):Play()
         end)
         button.MouseLeave:Connect(function()
-            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = normalColor}):Play()
+            TweenService:Create(button, TweenInfo.new(0.2), { BackgroundColor3 = normalColor }):Play()
         end)
     end
-    
+
     createHoverEffect(miningButton, Color3.fromRGB(45, 80, 130), Color3.fromRGB(60, 100, 160))
     createHoverEffect(bossButton, Color3.fromRGB(130, 45, 60), Color3.fromRGB(160, 60, 80))
 
@@ -109,14 +109,14 @@ local function createTheForgeMenu()
     local choiceMade = Instance.new("BindableEvent")
     local chosenUrl = ""
     local clicked = false
-    
+
     miningButton.MouseButton1Click:Connect(function()
         if clicked then return end
         clicked = true
         chosenUrl = forgeScripts.minerar
         choiceMade:Fire("minerar")
     end)
-    
+
     bossButton.MouseButton1Click:Connect(function()
         if clicked then return end
         clicked = true
@@ -126,18 +126,18 @@ local function createTheForgeMenu()
 
     local selectedMode = choiceMade.Event:Wait()
     choiceMade:Destroy()
-    
+
     -- Animação de saída
     TweenService:Create(frame, TweenInfo.new(0.3), {
-        Size = UDim2.new(0, 0, 0, 0), 
+        Size = UDim2.new(0, 0, 0, 0),
         Position = UDim2.new(0.5, 0, 0.5, 0)
     }):Play()
-    
+
     task.wait(0.3)
     screenGui:Destroy()
-    
+
     print("🎯 Modo selecionado: " .. selectedMode)
-    
+
     -- Retornar o script escolhido
     return chosenUrl, selectedMode
 end
@@ -145,10 +145,10 @@ end
 -- Executar o seletor e carregar o script escolhido
 local success, result = pcall(function()
     local scriptUrl, mode = createTheForgeMenu()
-    
+
     if scriptUrl and scriptUrl ~= "" then
         print("📦 Carregando script do modo: " .. mode)
-        
+
         -- Baixar e executar o script
         local content = game:HttpGet(scriptUrl)
         if content and content ~= "" then

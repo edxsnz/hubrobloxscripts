@@ -1,5 +1,5 @@
 -- ╔══════════════════════════════════════════════════════════════╗
--- ║         Clan Member Logger  v5.0  —  Potassium              ║
+-- ║         Clan Member Logger  v5.1  —  Potassium              ║
 -- ║  Multi-Clã · Prefixo+Sufixo · Arquivo por Clã · Presença   ║
 -- ╚══════════════════════════════════════════════════════════════╝
 
@@ -9,7 +9,7 @@ local MktSvc  = game:GetService("MarketplaceService")
 -- ══════════════════════════════════════════════════════════════
 --  CONFIGURAÇÕES GLOBAIS
 -- ══════════════════════════════════════════════════════════════
-local CFG = {
+local CFG     = {
     LOG_FOLDER  = "ClanLogs",
     AUTOSAVE_IV = 30,
 }
@@ -17,40 +17,39 @@ local CFG = {
 -- ══════════════════════════════════════════════════════════════
 --  HELPERS DATA/HORA
 -- ══════════════════════════════════════════════════════════════
-local function dateOnly() return os.date("%d-%m-%Y")     end
-local function timeOnly() return os.date("%H:%M:%S")     end
-local function nowH()     return tonumber(os.date("%H")) end
-local function nowM()     return tonumber(os.date("%M")) end
-local function nowS()     return tonumber(os.date("%S")) end
+local function dateOnly() return os.date("%d-%m-%Y") end
+local function timeOnly() return os.date("%H:%M:%S") end
+local function nowH() return tonumber(os.date("%H")) end
+local function nowM() return tonumber(os.date("%M")) end
+local function nowS() return tonumber(os.date("%S")) end
 
 local function fmtDur(s)
     s = math.floor(s or 0)
-    if s < 60    then return string.format("%ds", s)
-    elseif s < 3600 then return string.format("%dm %02ds", math.floor(s/60), s%60)
-    else return string.format("%dh %02dm %02ds", math.floor(s/3600), math.floor((s%3600)/60), s%60)
+    if s < 60 then
+        return string.format("%ds", s)
+    elseif s < 3600 then
+        return string.format("%dm %02ds", math.floor(s / 60), s % 60)
+    else
+        return string.format("%dh %02dm %02ds", math.floor(s / 3600), math.floor((s % 3600) / 60), s % 60)
     end
 end
 
 -- ══════════════════════════════════════════════════════════════
---  ESTRUTURA DE CLÃS
---  clans = lista de { tag, prefix, suffix, color, logs, file }
---  logs[userId] = { displayName, entryTime, joinTick,
---                   totalSeconds, sessions, idx, online }
+--  ESTADO GLOBAL
 -- ══════════════════════════════════════════════════════════════
-local clans       = {}   -- lista de clãs ativos
-local activeClan  = nil  -- clã selecionado na aba
-local isRecording = false
-local recStart    = nil
-local playerAddedConn   = nil
-local playerRemovedConn = nil
-local autoEnabled    = false
+local clans                  = {}
+local activeClan             = nil
+local isRecording            = false
+local recStart               = nil
+local playerAddedConn        = nil
+local playerRemovedConn      = nil
+local autoEnabled            = false
 local autoStartH, autoStartM = 21, 0
-local autoStopH,  autoStopM  = 22, 0
-local autoStartFired = false
-local autoStopFired  = false
+local autoStopH, autoStopM   = 22, 0
+local autoStartFired         = false
+local autoStopFired          = false
 
--- nome do jogo
-local gameName = "N/A"
+local gameName               = "N/A"
 pcall(function() gameName = MktSvc:GetProductInfo(game.PlaceId).Name end)
 
 -- ══════════════════════════════════════════════════════════════
@@ -61,53 +60,39 @@ local function ensureFolder()
         if not isfolder(CFG.LOG_FOLDER) then makefolder(CFG.LOG_FOLDER) end
     end)
 end
-
-local function safeRead(path)
-    local ok, d = pcall(readfile, path); return (ok and d) or nil
+local function safeRead(p)
+    local ok, d = pcall(readfile, p); return (ok and d) or nil
 end
-local function safeWrite(path, content)
-    pcall(writefile, path, content)
-end
-
--- nome do arquivo para um clã (um por dia)
+local function safeWrite(p, c) pcall(writefile, p, c) end
 local function clanFileName(clan)
-    local tag = clan.tag:gsub("[^%w%-]","_")  -- sanitiza
-    return CFG.LOG_FOLDER .. "/" .. tag .. "_LOG_" .. dateOnly() .. ".txt"
+    return CFG.LOG_FOLDER .. "/" .. clan.tag:gsub("[^%w%-]", "_") .. "_LOG_" .. dateOnly() .. ".txt"
 end
 
 -- ══════════════════════════════════════════════════════════════
---  MATCH  — verifica se DisplayName bate com prefixo/sufixo
+--  MATCH
 -- ══════════════════════════════════════════════════════════════
-local function matchesClan(displayName, clan)
-    local dn = displayName:upper()
+local function matchesClan(dn, clan)
+    local d   = dn:upper()
     local pre = (clan.prefix or ""):upper()
     local suf = (clan.suffix or ""):upper()
-    local hasPrefix = pre == "" or dn:sub(1, #pre) == pre
-    local hasSuffix = suf == "" or dn:sub(-#suf) == suf
-    -- precisa ter pelo menos prefixo ou sufixo configurado
     if pre == "" and suf == "" then return false end
-    return hasPrefix and hasSuffix
+    local okP = pre == "" or d:sub(1, #pre) == pre
+    local okS = suf == "" or d:sub(- #suf) == suf
+    return okP and okS
 end
 
--- ══════════════════════════════════════════════════════════════
---  TEMPO REAL
--- ══════════════════════════════════════════════════════════════
 local function getCurrentSecs(info)
     local t = info.totalSeconds or 0
-    if info.online and info.joinTick then
-        t = t + (tick() - info.joinTick)
-    end
+    if info.online and info.joinTick then t = t + (tick() - info.joinTick) end
     return t
 end
 
 -- ══════════════════════════════════════════════════════════════
---  BUILD + SAVE por clã
+--  BUILD / SAVE
 -- ══════════════════════════════════════════════════════════════
 local function buildContent(clan, isFinal)
-    local lines = {}
-    local function w(s) lines[#lines+1] = s end
-
-    local tag = (clan.prefix or "") .. "*" .. (clan.suffix or "")
+    local L = {}
+    local function w(s) L[#L + 1] = s end
     w(string.rep("═", 72))
     w("  CLAN MEMBER LOGGER — REGISTRO DE INVASÃO")
     w(string.rep("═", 72))
@@ -115,68 +100,45 @@ local function buildContent(clan, isFinal)
     w("Jogo           : " .. gameName)
     w("Place ID       : " .. tostring(game.PlaceId))
     w("Clã / Tag      : " .. clan.tag)
-    w("Padrão         : prefixo=[ " .. (clan.prefix or "") ..
-      " ]  sufixo=[ " .. (clan.suffix or "") .. " ]")
+    w("Padrão         : prefixo=[ " .. (clan.prefix or "") .. " ]  sufixo=[ " .. (clan.suffix or "") .. " ]")
     w(string.format("AutoStart      : %02d:%02d", autoStartH, autoStartM))
-    w(string.format("AutoStop       : %02d:%02d", autoStopH,  autoStopM))
+    w(string.format("AutoStop       : %02d:%02d", autoStopH, autoStopM))
     w(string.rep("─", 72))
-    w(string.format("%-12s | %-26s | %-12s | %-10s | %s",
-        "[HORA]","[USUÁRIO]","[USER ID]","[ENTRADA]","[TEMPO TOTAL]"))
+    w(string.format("%-12s | %-26s | %-12s | %-10s | %s", "[HORA]", "[USUÁRIO]", "[USER ID]", "[ENTRADA]",
+        "[TEMPO TOTAL]"))
     w(string.rep("─", 72))
-
-    local ordered = {}
-    for uid, info in pairs(clan.logs) do
-        ordered[#ordered+1] = { uid=uid, info=info }
-    end
-    table.sort(ordered, function(a,b) return (a.info.idx or 0)<(b.info.idx or 0) end)
-
-    for _, entry in ipairs(ordered) do
-        local info = entry.info
-        local secs = getCurrentSecs(info)
+    local ord = {}
+    for uid, info in pairs(clan.logs) do ord[#ord + 1] = { uid = uid, info = info } end
+    table.sort(ord, function(a, b) return (a.info.idx or 0) < (b.info.idx or 0) end)
+    for _, e in ipairs(ord) do
+        local info = e.info
         w(string.format("[%s] | %-26s | %-12s | %-10s | %s %s",
-            info.entryTime,
-            info.displayName,
-            tostring(entry.uid),
-            info.entryTime,
-            fmtDur(secs),
-            info.online and "🟢" or "🔴"
-        ))
+            info.entryTime, info.displayName, tostring(e.uid),
+            info.entryTime, fmtDur(getCurrentSecs(info)), info.online and "🟢" or "🔴"))
     end
-
     w(string.rep("─", 72))
-    w("STATUS         : " .. (isFinal and "✔ GRAVAÇÃO FINALIZADA" or
-        "⏺ GRAVANDO... (auto-save " .. timeOnly() .. ")"))
-    if recStart then
-        w("Duração sessão : " .. fmtDur(tick() - recStart))
-    end
+    w("STATUS         : " .. (isFinal and "✔ GRAVAÇÃO FINALIZADA" or "⏺ GRAVANDO... (auto-save " .. timeOnly() .. ")"))
+    if recStart then w("Duração sessão : " .. fmtDur(tick() - recStart)) end
     w("Fim            : " .. (isFinal and timeOnly() or "--"))
     w("Total logados  : " .. (clan.total or 0) .. " membro(s)")
     w(string.rep("═", 72))
     w("")
     w("  LEGENDA:  🟢 Online no momento do save  |  🔴 Saiu do servidor")
     w(string.rep("═", 72))
-    return table.concat(lines,"\n").."\n"
+    return table.concat(L, "\n") .. "\n"
 end
-
-local function saveClan(clan, isFinal)
-    safeWrite(clan.file, buildContent(clan, isFinal))
-end
-
+local function saveClan(clan, isFinal) safeWrite(clan.file, buildContent(clan, isFinal)) end
 local function saveAllClans(isFinal)
-    for _, clan in ipairs(clans) do
-        if clan.total and clan.total > 0 then
-            saveClan(clan, isFinal)
-        end
-    end
+    for _, c in ipairs(clans) do if (c.total or 0) > 0 then saveClan(c, isFinal) end end
 end
 
 -- ══════════════════════════════════════════════════════════════
---  PARSER — retomada de arquivo existente
+--  PARSER
 -- ══════════════════════════════════════════════════════════════
 local function parseFile(content)
     local players, idx = {}, 0
     for line in content:gmatch("[^\n]+") do
-        local t,name,uid,entry,dur = line:match(
+        local t, name, uid, entry, dur = line:match(
             "^%[(%d+:%d+:%d+)%] | (.-) | (%d+) | (%d+:%d+:%d+) | (.-)%s*[🟢🔴]?%s*$")
         if t and name and uid then
             local id = tonumber(uid)
@@ -186,586 +148,574 @@ local function parseFile(content)
                 local h2 = dur and dur:match("(%d+)h")
                 local m2 = dur and dur:match("(%d+)m")
                 local s2 = dur and dur:match("(%d+)s")
-                if h2 then secs=secs+tonumber(h2)*3600 end
-                if m2 then secs=secs+tonumber(m2)*60   end
-                if s2 then secs=secs+tonumber(s2)      end
+                if h2 then secs = secs + tonumber(h2) * 3600 end
+                if m2 then secs = secs + tonumber(m2) * 60 end
+                if s2 then secs = secs + tonumber(s2) end
                 players[id] = {
-                    displayName  = name:match("^%s*(.-)%s*$"),
-                    entryTime    = entry or t,
-                    joinTick     = nil,
+                    displayName = name:match("^%s*(.-)%s*$"),
+                    entryTime = entry or t,
+                    joinTick = nil,
                     totalSeconds = secs,
-                    sessions     = 1,
-                    idx          = idx,
-                    online       = false,
+                    sessions = 1,
+                    idx = idx,
+                    online = false
                 }
             end
         end
     end
     return players, idx
 end
+local function parseConfig(content)
+    local cfg = {}
+    local sh, sm = content:match("AutoStart%s*:%s*(%d+):(%d+)")
+    local eh, em = content:match("AutoStop%s*:%s*(%d+):(%d+)")
+    if sh then
+        cfg.startH = tonumber(sh); cfg.startM = tonumber(sm) or 0
+    end
+    if eh then
+        cfg.stopH = tonumber(eh); cfg.stopM = tonumber(em) or 0
+    end
+    return cfg
+end
 
 -- ══════════════════════════════════════════════════════════════
---  LOG DE UM JOGADOR num clã específico
+--  GRAVAÇÃO
 -- ══════════════════════════════════════════════════════════════
 local function logPlayerToClan(player, clan)
     local uid = player.UserId
     if clan.logs[uid] then
-        -- voltou — soma tempo
         local info = clan.logs[uid]
-        info.joinTick = tick()
-        info.online   = true
-        info.sessions = (info.sessions or 1) + 1
-        print(string.format("[Logger] 🔄 Voltou: %s → %s (sessão #%d)",
-            player.DisplayName, clan.tag, info.sessions))
+        info.joinTick = tick(); info.online = true; info.sessions = (info.sessions or 1) + 1
     else
         clan.total = (clan.total or 0) + 1
         clan.logs[uid] = {
-            displayName  = player.DisplayName,
-            entryTime    = timeOnly(),
-            joinTick     = tick(),
+            displayName = player.DisplayName,
+            entryTime = timeOnly(),
+            joinTick = tick(),
             totalSeconds = 0,
-            sessions     = 1,
-            idx          = clan.total,
-            online       = true,
+            sessions = 1,
+            idx = clan.total,
+            online = true
         }
-        print(string.format("[Logger] ✓ #%d %s → Clã: %s",
-            clan.total, player.DisplayName, clan.tag))
+        print(string.format("[Logger] ✓ #%d %s → %s", clan.total, player.DisplayName, clan.tag))
     end
     saveClan(clan, false)
 end
 
--- Verifica jogador em TODOS os clãs ativos
-local function checkPlayerAllClans(player)
+local function checkAll(player)
     for _, clan in ipairs(clans) do
-        if matchesClan(player.DisplayName, clan) then
-            logPlayerToClan(player, clan)
-        end
+        if matchesClan(player.DisplayName, clan) then logPlayerToClan(player, clan) end
     end
 end
 
-local function onPlayerLeave(player)
+local function onLeave(player)
     if not isRecording then return end
-    local uid = player.UserId
     for _, clan in ipairs(clans) do
-        local info = clan.logs[uid]
+        local info = clan.logs[player.UserId]
         if info and info.online and info.joinTick then
             info.totalSeconds = info.totalSeconds + (tick() - info.joinTick)
-            info.joinTick     = nil
-            info.online       = false
-            print(string.format("[Logger] 👋 Saiu: %s | %s | Tempo: %s",
-                player.DisplayName, clan.tag, fmtDur(info.totalSeconds)))
+            info.joinTick = nil; info.online = false
             saveClan(clan, false)
         end
     end
 end
 
--- ══════════════════════════════════════════════════════════════
---  START / STOP GRAVAÇÃO
--- ══════════════════════════════════════════════════════════════
+local statusLbl, recBtn, schedInfo, clockLbl, clanCountLbl, clanNameLbl, clanFileLbl, removeBtn, addInfo
+-- (forward refs para funções abaixo)
+
 local function startRecording()
     if isRecording then return end
     if #clans == 0 then return end
-
-    ensureFolder()
-    isRecording = true
-    recStart    = tick()
-
-    -- Inicializa/retoma arquivo de cada clã
+    ensureFolder(); isRecording = true; recStart = tick()
     for _, clan in ipairs(clans) do
-        clan.file  = clanFileName(clan)
-        local ex   = safeRead(clan.file)
+        clan.file = clanFileName(clan)
+        local ex = safeRead(clan.file)
         if ex and #ex > 0 then
             local saved, n = parseFile(ex)
-            clan.logs  = saved
-            clan.total = n
-            print(string.format("[Logger] 🔄 Clã %s retomado — %d membros.", clan.tag, n))
+            clan.logs = saved; clan.total = n
+            -- restaura configs de agendamento do primeiro arquivo encontrado
+            local cfg = parseConfig(ex)
+            if cfg.startH then
+                autoStartH = cfg.startH; autoStartM = cfg.startM
+            end
+            if cfg.stopH then
+                autoStopH = cfg.stopH; autoStopM = cfg.stopM
+            end
         else
-            clan.logs  = {}
-            clan.total = 0
+            clan.logs = {}; clan.total = 0
         end
     end
-
-    -- Varre quem já está no servidor
-    for _, p in ipairs(Players:GetPlayers()) do
-        checkPlayerAllClans(p)
-    end
-
+    for _, p in ipairs(Players:GetPlayers()) do checkAll(p) end
     playerAddedConn = Players.PlayerAdded:Connect(function(p)
-        task.wait(0.3)
-        checkPlayerAllClans(p)
+        task.wait(0.3); checkAll(p)
     end)
-    playerRemovedConn = Players.PlayerRemoving:Connect(function(p)
-        onPlayerLeave(p)
-    end)
-
+    playerRemovedConn = Players.PlayerRemoving:Connect(function(p) onLeave(p) end)
     saveAllClans(false)
 end
 
 local function stopRecording()
     if not isRecording then return end
     isRecording = false
-
-    -- Congela tempo de quem está online
     for _, p in ipairs(Players:GetPlayers()) do
-        local uid = p.UserId
         for _, clan in ipairs(clans) do
-            local info = clan.logs[uid]
+            local info = clan.logs[p.UserId]
             if info and info.online and info.joinTick then
                 info.totalSeconds = info.totalSeconds + (tick() - info.joinTick)
-                info.joinTick = nil
-                info.online   = false
+                info.joinTick = nil; info.online = false
             end
         end
     end
-
-    if playerAddedConn   then playerAddedConn:Disconnect();   playerAddedConn   = nil end
-    if playerRemovedConn then playerRemovedConn:Disconnect(); playerRemovedConn = nil end
-
+    if playerAddedConn then
+        playerAddedConn:Disconnect(); playerAddedConn = nil
+    end
+    if playerRemovedConn then
+        playerRemovedConn:Disconnect(); playerRemovedConn = nil
+    end
     saveAllClans(true)
-    print("[Logger] ⏹ Gravação finalizada para todos os clãs.")
 end
 
 -- ══════════════════════════════════════════════════════════════
---  CORES PARA ABAS  (uma cor por clã, até 8)
+--  CORES
 -- ══════════════════════════════════════════════════════════════
 local CLAN_COLORS = {
-    Color3.fromRGB(55,130,255),   -- azul
-    Color3.fromRGB(80,200,100),   -- verde
-    Color3.fromRGB(220,100,60),   -- laranja
-    Color3.fromRGB(180,80,220),   -- roxo
-    Color3.fromRGB(220,200,50),   -- amarelo
-    Color3.fromRGB(60,200,200),   -- ciano
-    Color3.fromRGB(220,70,100),   -- vermelho
-    Color3.fromRGB(180,140,80),   -- dourado
+    Color3.fromRGB(55, 130, 255), Color3.fromRGB(80, 200, 100), Color3.fromRGB(220, 100, 60),
+    Color3.fromRGB(180, 80, 220), Color3.fromRGB(220, 200, 50), Color3.fromRGB(60, 200, 200),
+    Color3.fromRGB(220, 70, 100), Color3.fromRGB(180, 140, 80),
 }
 
 -- ══════════════════════════════════════════════════════════════
---  GUI
+--  GUI — helpers
 -- ══════════════════════════════════════════════════════════════
-local prev = game:GetService("CoreGui"):FindFirstChild("ClanLoggerV5")
+local prev = game:GetService("CoreGui"):FindFirstChild("ClanLoggerV51")
 if prev then prev:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name           = "ClanLoggerV5"
-ScreenGui.ResetOnSpawn   = false
+ScreenGui.Name = "ClanLoggerV51"; ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent         = game:GetService("CoreGui")
+ScreenGui.Parent = game:GetService("CoreGui")
 
--- helpers
 local function corner(p, r)
-    local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0,r or 8); c.Parent=p
+    local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, r or 8); c.Parent = p
 end
 local function stroke(p, col, th)
-    local s = Instance.new("UIStroke"); s.Color=col or Color3.fromRGB(80,120,255); s.Thickness=th or 1.5; s.Parent=p
-end
-local function lbl(par, pos, sz, txt, ts, col, font, ax)
-    local l = Instance.new("TextLabel")
-    l.Position=pos; l.Size=sz; l.BackgroundTransparency=1
-    l.Text=txt; l.TextSize=ts or 12
-    l.TextColor3=col or Color3.fromRGB(210,210,210)
-    l.Font=font or Enum.Font.Gotham
-    l.TextXAlignment=ax or Enum.TextXAlignment.Left
-    l.TextWrapped=true; l.Parent=par; return l
-end
-local function mkbtn(par, pos, sz, txt, bg, ts)
-    local b = Instance.new("TextButton")
-    b.Position=pos; b.Size=sz; b.BackgroundColor3=bg or Color3.fromRGB(55,55,85)
-    b.Text=txt; b.TextColor3=Color3.fromRGB(255,255,255)
-    b.TextSize=ts or 13; b.Font=Enum.Font.GothamBold
-    b.BorderSizePixel=0; b.Parent=par; corner(b,7); return b
-end
-local function mkbox(par, pos, sz, def, ph)
-    local b = Instance.new("TextBox")
-    b.Position=pos; b.Size=sz; b.BackgroundColor3=Color3.fromRGB(18,18,34)
-    b.Text=def or ""; b.PlaceholderText=ph or ""
-    b.PlaceholderColor3=Color3.fromRGB(90,90,110)
-    b.TextColor3=Color3.fromRGB(255,255,255)
-    b.TextSize=13; b.Font=Enum.Font.Gotham
-    b.BorderSizePixel=0; b.ClearTextOnFocus=false
-    b.TextXAlignment=Enum.TextXAlignment.Center; b.Parent=par
-    corner(b,6); stroke(b,Color3.fromRGB(60,70,130),1); return b
-end
-local function divider(par, y)
-    local d=Instance.new("Frame"); d.Size=UDim2.new(1,-24,0,1)
-    d.Position=UDim2.new(0,12,0,y); d.BackgroundColor3=Color3.fromRGB(38,38,65)
-    d.BorderSizePixel=0; d.Parent=par
+    local s = Instance.new("UIStroke"); s.Color = col or Color3.fromRGB(80, 120, 255); s.Thickness = th or 1.5; s.Parent =
+        p
 end
 
--- ── Janela ──────────────────────────────────────────────────
-local WW, WH = 400, 600
+local function mkLabel(par, x, y, w, h, txt, ts, col, font, ax)
+    local l = Instance.new("TextLabel")
+    l.Position = UDim2.new(0, x, 0, y); l.Size = UDim2.new(0, w, 0, h)
+    l.BackgroundTransparency = 1; l.Text = txt; l.TextSize = ts or 12
+    l.TextColor3 = col or Color3.fromRGB(210, 210, 210)
+    l.Font = font or Enum.Font.Gotham
+    l.TextXAlignment = ax or Enum.TextXAlignment.Left
+    l.TextWrapped = true; l.Parent = par; return l
+end
+
+local function mkBtn(par, x, y, w, h, txt, bg, ts)
+    local b = Instance.new("TextButton")
+    b.Position = UDim2.new(0, x, 0, y); b.Size = UDim2.new(0, w, 0, h)
+    b.BackgroundColor3 = bg or Color3.fromRGB(55, 55, 85)
+    b.Text = txt; b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.TextSize = ts or 13; b.Font = Enum.Font.GothamBold
+    b.BorderSizePixel = 0; b.Parent = par; corner(b, 7); return b
+end
+
+local function mkBox(par, x, y, w, h, def, ph)
+    local b = Instance.new("TextBox")
+    b.Position = UDim2.new(0, x, 0, y); b.Size = UDim2.new(0, w, 0, h)
+    b.BackgroundColor3 = Color3.fromRGB(18, 18, 34)
+    b.Text = def or ""; b.PlaceholderText = ph or ""
+    b.PlaceholderColor3 = Color3.fromRGB(80, 80, 110)
+    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.TextSize = 13; b.Font = Enum.Font.Gotham
+    b.BorderSizePixel = 0; b.ClearTextOnFocus = false
+    b.TextXAlignment = Enum.TextXAlignment.Center; b.Parent = par
+    corner(b, 6); stroke(b, Color3.fromRGB(55, 65, 120), 1); return b
+end
+
+local function mkDiv(par, y)
+    local d = Instance.new("Frame")
+    d.Size = UDim2.new(1, -24, 0, 1); d.Position = UDim2.new(0, 12, 0, y)
+    d.BackgroundColor3 = Color3.fromRGB(36, 36, 62); d.BorderSizePixel = 0; d.Parent = par
+end
+
+-- ══════════════════════════════════════════════════════════════
+--  JANELA PRINCIPAL
+--  Layout top-down com Y incremental — sem sobreposição garantida
+--
+--  Seção          | Y início | Altura | Y fim
+--  ─────────────────────────────────────────
+--  TitleBar       |    0     |   44   |   44
+--  Status+Clock   |   50     |   22   |   72
+--  Divider        |   78     |    1   |   79
+--  ── ADICIONAR CLÃ ──
+--  Título seção   |   86     |   18   |  104
+--  Labels campos  |  108     |   14   |  122
+--  Boxes linha 1  |  124     |   32   |  156
+--    tagBox       |  124  x=12   w=116
+--    prefixBox    |  124  x=136  w=100
+--    suffixBox    |  124  x=244  w=100
+--  addBtn         |  124  x=350  w=90  h=32
+--  addInfo        |  160     |   16   |  176
+--  Divider        |  180     |    1   |  181
+--  ── ABAS CLÃS ──
+--  Título seção   |  188     |   18   |  206
+--  TabScroll      |  208     |   36   |  244
+--  Divider        |  248     |    1   |  249
+--  ── PAINEL CLÃ SELECIONADO ──
+--  Nome + count   |  256     |   20   |  276
+--  Arquivo path   |  278     |   14   |  292
+--  removeBtn      |  256  x=right  h=20
+--  tHead          |  296     |   22   |  318
+--  Scroll lista   |  320     |  128   |  448
+--  Divider        |  452     |    1   |  453
+--  ── GRAVAR ──
+--  recBtn         |  460     |   38   |  498
+--  Divider        |  504     |    1   |  505
+--  ── AGENDAMENTO ──
+--  Título         |  512     |   16   |  528
+--  Labels HH:MM   |  530     |   14   |  544
+--  Boxes + autoBtn|  546     |   34   |  580
+--    sH x=12  w=44
+--    :  x=60  w=12
+--    sM x=76  w=44
+--    eH x=148 w=44
+--    :  x=196 w=12
+--    eM x=212 w=44
+--    autoBtn x=268 w=118 h=34
+--  schedInfo      |  584     |   16   |  600
+--  ─── TOTAL HEIGHT = 604 ───
+-- ══════════════════════════════════════════════════════════════
+
+local WW = 450
+local WH = 608
 
 local Main = Instance.new("Frame")
-Main.Name="Main"; Main.Size=UDim2.new(0,WW,0,WH)
-Main.Position=UDim2.new(0.5,-WW/2,0.5,-WH/2)
-Main.BackgroundColor3=Color3.fromRGB(10,10,19)
-Main.BorderSizePixel=0; Main.Active=true; Main.Draggable=true; Main.Parent=ScreenGui
-corner(Main,12); stroke(Main,Color3.fromRGB(55,95,230),2)
+Main.Name = "Main"; Main.Size = UDim2.new(0, WW, 0, WH)
+Main.Position = UDim2.new(0.5, -WW / 2, 0.5, -WH / 2)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 19)
+Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true; Main.Parent = ScreenGui
+corner(Main, 12); stroke(Main, Color3.fromRGB(55, 95, 230), 2)
 
-local grad=Instance.new("UIGradient")
-grad.Color=ColorSequence.new{
-    ColorSequenceKeypoint.new(0,Color3.fromRGB(15,15,30)),
-    ColorSequenceKeypoint.new(1,Color3.fromRGB(9,9,17)),
-}; grad.Rotation=135; grad.Parent=Main
-
--- Título
-local TBar=Instance.new("Frame")
-TBar.Size=UDim2.new(1,0,0,44); TBar.BackgroundColor3=Color3.fromRGB(16,16,36)
-TBar.BorderSizePixel=0; TBar.Parent=Main; corner(TBar,12)
-lbl(TBar,UDim2.new(0,14,0,0),UDim2.new(1,-50,1,0),
-    "⬡  Clan Member Logger  v5.0",14,Color3.fromRGB(255,255,255),Enum.Font.GothamBold)
-
-local xBtn=Instance.new("TextButton")
-xBtn.Size=UDim2.new(0,26,0,26); xBtn.Position=UDim2.new(1,-34,0,9)
-xBtn.BackgroundColor3=Color3.fromRGB(160,35,35); xBtn.Text="✕"
-xBtn.TextColor3=Color3.fromRGB(255,255,255); xBtn.TextSize=12
-xBtn.Font=Enum.Font.GothamBold; xBtn.BorderSizePixel=0; xBtn.Parent=TBar; corner(xBtn,6)
-
--- Status / relógio / contador
-local statusLbl = lbl(Main,UDim2.new(0,14,0,52),UDim2.new(1,-28,0,20),
-    "⚪ Aguardando...",13,Color3.fromRGB(180,180,180),Enum.Font.Gotham)
-local clockLbl  = lbl(Main,UDim2.new(1,-155,0,52),UDim2.new(0,141,0,20),
-    "🕐 --:--:--",12,Color3.fromRGB(130,190,255),Enum.Font.GothamBold,Enum.TextXAlignment.Right)
-
-divider(Main,78)
-
--- ══════════════════════════════════════════════════════════════
---  SEÇÃO: ADICIONAR CLÃ
--- ══════════════════════════════════════════════════════════════
-lbl(Main,UDim2.new(0,14,0,86),UDim2.new(1,-28,0,18),
-    "➕  ADICIONAR CLÃ",12,Color3.fromRGB(255,200,70),Enum.Font.GothamBold)
-
--- Nome/Tag do clã
-lbl(Main,UDim2.new(0,14,0,108),UDim2.new(0,80,0,14),"Nome/Tag",10,Color3.fromRGB(150,150,200))
-local tagBox = mkbox(Main,UDim2.new(0,14,0,124),UDim2.new(0,110,0,30),"","ex: CSI")
-
--- Prefixo
-lbl(Main,UDim2.new(0,136,0,108),UDim2.new(0,80,0,14),"Prefixo",10,Color3.fromRGB(150,210,150))
-local prefixBox = mkbox(Main,UDim2.new(0,136,0,124),UDim2.new(0,90,0,30),"","ex: CSI_")
-
--- Sufixo
-lbl(Main,UDim2.new(0,238,0,108),UDim2.new(0,80,0,14),"Sufixo",10,Color3.fromRGB(210,150,150))
-local suffixBox = mkbox(Main,UDim2.new(0,238,0,124),UDim2.new(0,90,0,30),"","ex: _z")
-
--- Info auxiliar
-local addInfo = lbl(Main,UDim2.new(0,14,0,158),UDim2.new(1,-110,0,14),
-    "💡 Prefixo e/ou sufixo. Pode deixar um em branco.",10,Color3.fromRGB(120,120,170))
-
--- Botão adicionar
-local addBtn = mkbtn(Main,UDim2.new(1,-106,0,120),UDim2.new(0,92,0,32),
-    "＋ Adicionar",Color3.fromRGB(40,140,70),12)
-
-divider(Main,178)
-
--- ══════════════════════════════════════════════════════════════
---  ABAS DE CLÃS
--- ══════════════════════════════════════════════════════════════
-lbl(Main,UDim2.new(0,14,0,186),UDim2.new(1,-28,0,18),
-    "📂  CLÃS ATIVOS",12,Color3.fromRGB(255,200,70),Enum.Font.GothamBold)
-
--- ScrollFrame horizontal para as abas
-local TabScroll = Instance.new("ScrollingFrame")
-TabScroll.Size=UDim2.new(1,-24,0,36); TabScroll.Position=UDim2.new(0,12,0,206)
-TabScroll.BackgroundTransparency=1; TabScroll.BorderSizePixel=0
-TabScroll.ScrollBarThickness=0; TabScroll.ScrollingDirection=Enum.ScrollingDirection.X
-TabScroll.CanvasSize=UDim2.new(0,0,0,0); TabScroll.AutomaticCanvasSize=Enum.AutomaticSize.X
-TabScroll.Parent=Main
-
-local TabLayout=Instance.new("UIListLayout")
-TabLayout.FillDirection=Enum.FillDirection.Horizontal
-TabLayout.SortOrder=Enum.SortOrder.LayoutOrder
-TabLayout.Padding=UDim.new(0,6); TabLayout.Parent=TabScroll
-
--- "Nenhum clã" placeholder
-local noClansLbl = lbl(TabScroll,UDim2.new(0,0,0,8),UDim2.new(0,200,0,20),
-    "Nenhum clã adicionado ainda.",11,Color3.fromRGB(100,100,140))
-
-divider(Main,248)
-
--- ══════════════════════════════════════════════════════════════
---  PAINEL DO CLÃ SELECIONADO
--- ══════════════════════════════════════════════════════════════
-local clanNameLbl = lbl(Main,UDim2.new(0,14,0,256),UDim2.new(0,200,0,18),
-    "Selecione um clã acima",12,Color3.fromRGB(160,160,200),Enum.Font.GothamBold)
-local clanCountLbl = lbl(Main,UDim2.new(1,-130,0,256),UDim2.new(0,116,0,18),
-    "",12,Color3.fromRGB(160,255,160),Enum.Font.GothamBold,Enum.TextXAlignment.Right)
-local clanFileLbl = lbl(Main,UDim2.new(0,14,0,274),UDim2.new(1,-28,0,14),
-    "",9,Color3.fromRGB(200,170,60))
-
--- Remover clã
-local removeBtn = mkbtn(Main,UDim2.new(1,-100,0,254),UDim2.new(0,86,0,22),
-    "🗑 Remover",Color3.fromRGB(130,35,35),10)
-removeBtn.Visible=false
-
--- Header tabela presença
-local tHead=Instance.new("Frame")
-tHead.Size=UDim2.new(1,-24,0,20); tHead.Position=UDim2.new(0,12,0,292)
-tHead.BackgroundColor3=Color3.fromRGB(20,20,42); tHead.BorderSizePixel=0; tHead.Parent=Main
-corner(tHead,4)
-lbl(tHead,UDim2.new(0,6,0,0),   UDim2.new(0.44,0,1,0),"USUÁRIO",10,Color3.fromRGB(160,160,200),Enum.Font.GothamBold)
-lbl(tHead,UDim2.new(0.44,0,0,0),UDim2.new(0,56,1,0),  "ENTRADA",10,Color3.fromRGB(160,160,200),Enum.Font.GothamBold)
-lbl(tHead,UDim2.new(1,-80,0,0), UDim2.new(0,74,1,0),  "TEMPO",  10,Color3.fromRGB(160,160,200),Enum.Font.GothamBold,Enum.TextXAlignment.Right)
-
--- Lista com scroll
-local Scroll=Instance.new("ScrollingFrame")
-Scroll.Size=UDim2.new(1,-24,0,130); Scroll.Position=UDim2.new(0,12,0,314)
-Scroll.BackgroundColor3=Color3.fromRGB(13,13,24); Scroll.BorderSizePixel=0
-Scroll.ScrollBarThickness=3; Scroll.ScrollBarImageColor3=Color3.fromRGB(70,90,200)
-Scroll.CanvasSize=UDim2.new(0,0,0,0); Scroll.AutomaticCanvasSize=Enum.AutomaticSize.Y
-Scroll.Parent=Main; corner(Scroll,6); stroke(Scroll,Color3.fromRGB(32,32,60),1)
-
-local ListLayout=Instance.new("UIListLayout")
-ListLayout.SortOrder=Enum.SortOrder.LayoutOrder; ListLayout.Padding=UDim.new(0,2); ListLayout.Parent=Scroll
-local lPad=Instance.new("UIPadding"); lPad.PaddingTop=UDim.new(0,3)
-lPad.PaddingLeft=UDim.new(0,4); lPad.PaddingRight=UDim.new(0,4); lPad.Parent=Scroll
-
--- Pool de rows
-local rows={}
-for i=1,18 do
-    local row=Instance.new("Frame")
-    row.Size=UDim2.new(1,-8,0,22); row.BorderSizePixel=0; row.LayoutOrder=i
-    row.BackgroundColor3=(i%2==0) and Color3.fromRGB(17,17,32) or Color3.fromRGB(13,13,24)
-    row.Visible=false; row.Parent=Scroll; corner(row,3)
-    local dot  = lbl(row,UDim2.new(0,3,0,0),   UDim2.new(0,14,1,0),"🟢",10)
-    local name = lbl(row,UDim2.new(0,17,0,0),  UDim2.new(0.46,0,1,0),"",10,Color3.fromRGB(220,220,220))
-    local entry= lbl(row,UDim2.new(0.46,0,0,0),UDim2.new(0,56,1,0),"",10,Color3.fromRGB(140,180,140))
-    local dur  = lbl(row,UDim2.new(1,-78,0,0), UDim2.new(0,74,1,0),"",10,Color3.fromRGB(255,210,80),Enum.Font.GothamBold,Enum.TextXAlignment.Right)
-    rows[i]={frame=row,dot=dot,name=name,entry=entry,dur=dur}
+do -- gradiente
+    local g = Instance.new("UIGradient")
+    g.Color = ColorSequence.new {
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 15, 30)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(9, 9, 17)),
+    }; g.Rotation = 135; g.Parent = Main
 end
 
-divider(Main,452)
+-- ── TitleBar (y=0, h=44) ────────────────────────────────────
+local TBar = Instance.new("Frame")
+TBar.Size = UDim2.new(1, 0, 0, 44); TBar.Position = UDim2.new(0, 0, 0, 0)
+TBar.BackgroundColor3 = Color3.fromRGB(16, 16, 36); TBar.BorderSizePixel = 0; TBar.Parent = Main
+corner(TBar, 12)
+
+mkLabel(TBar, 14, 0, WW - 54, 44, "⬡  Clan Member Logger  v5.1", 14,
+    Color3.fromRGB(255, 255, 255), Enum.Font.GothamBold)
+
+local xBtn = Instance.new("TextButton")
+xBtn.Size = UDim2.new(0, 26, 0, 26); xBtn.Position = UDim2.new(1, -34, 0, 9)
+xBtn.BackgroundColor3 = Color3.fromRGB(160, 35, 35); xBtn.Text = "✕"
+xBtn.TextColor3 = Color3.fromRGB(255, 255, 255); xBtn.TextSize = 12
+xBtn.Font = Enum.Font.GothamBold; xBtn.BorderSizePixel = 0; xBtn.Parent = TBar; corner(xBtn, 6)
+
+-- ── Status + Clock (y=50, h=22) ────────────────────────────
+statusLbl = mkLabel(Main, 14, 50, WW - 160, 22, "⚪ Aguardando...", 13, Color3.fromRGB(180, 180, 180), Enum.Font.Gotham)
+clockLbl  = mkLabel(Main, WW - 150, 50, 138, 22, "🕐 --:--:--", 12, Color3.fromRGB(130, 190, 255), Enum.Font.GothamBold,
+    Enum.TextXAlignment.Right)
+
+mkDiv(Main, 78)
 
 -- ══════════════════════════════════════════════════════════════
---  BOTÕES GRAVAR + AGENDAMENTO
+--  SEÇÃO ADICIONAR CLÃ  (y=86)
 -- ══════════════════════════════════════════════════════════════
-local recBtn = mkbtn(Main,UDim2.new(0,12,0,460),UDim2.new(1,-24,0,38),
-    "⏺  INICIAR GRAVAÇÃO (todos os clãs)",Color3.fromRGB(35,165,70),13)
+mkLabel(Main, 14, 86, WW - 28, 18, "➕  ADICIONAR CLÃ", 12, Color3.fromRGB(255, 200, 70), Enum.Font.GothamBold)
 
-divider(Main,506)
+-- labels das caixinhas (y=106)
+mkLabel(Main, 12, 106, 116, 14, "Nome / Tag", 10, Color3.fromRGB(150, 150, 200))
+mkLabel(Main, 136, 106, 100, 14, "Prefixo", 10, Color3.fromRGB(150, 210, 150))
+mkLabel(Main, 244, 106, 100, 14, "Sufixo", 10, Color3.fromRGB(210, 150, 150))
+mkLabel(Main, 350, 106, 90, 14, "", 10, Color3.fromRGB(150, 150, 200)) -- espaço do botão
 
-lbl(Main,UDim2.new(0,14,0,513),UDim2.new(0.5,0,0,14),
-    "⏰ AGENDAMENTO",11,Color3.fromRGB(255,200,70),Enum.Font.GothamBold)
+-- boxes + botão na mesma linha (y=122, h=32)
+local tagBox    = mkBox(Main, 12, 122, 116, 32, "", "ex: CSI")
+local prefixBox = mkBox(Main, 136, 122, 100, 32, "", "ex: CSI_")
+local suffixBox = mkBox(Main, 244, 122, 100, 32, "", "ex: _z")
+local addBtn    = mkBtn(Main, 350, 122, 90, 32, "➕ Adicionar", Color3.fromRGB(40, 140, 70), 12)
 
--- Boxes horário
-lbl(Main,UDim2.new(0,14,0,530),UDim2.new(0,70,0,12),"▶ Início",10,Color3.fromRGB(130,210,130))
-lbl(Main,UDim2.new(0.5,4,0,530),UDim2.new(0,70,0,12),"⏹ Fim",10,Color3.fromRGB(210,130,130))
+-- feedback (y=160, h=16)
+addInfo         = mkLabel(Main, 12, 160, WW - 24, 16, "💡 Prefixo e/ou sufixo. Pode deixar um vazio.",
+    10, Color3.fromRGB(110, 110, 160))
 
-local sH=mkbox(Main,UDim2.new(0,14,0,544),UDim2.new(0,44,0,28),"21")
-lbl(Main,UDim2.new(0,61,0,544),UDim2.new(0,12,0,28),":",16,Color3.fromRGB(255,255,255),Enum.Font.GothamBold,Enum.TextXAlignment.Center)
-local sM=mkbox(Main,UDim2.new(0,76,0,544),UDim2.new(0,44,0,28),"00")
-
-local eH=mkbox(Main,UDim2.new(0.5,4,0,544),UDim2.new(0,44,0,28),"22")
-lbl(Main,UDim2.new(0.5,51,0,544),UDim2.new(0,12,0,28),":",16,Color3.fromRGB(255,255,255),Enum.Font.GothamBold,Enum.TextXAlignment.Center)
-local eM=mkbox(Main,UDim2.new(0.5,66,0,544),UDim2.new(0,44,0,28),"00")
-
-local autoBtn=mkbtn(Main,UDim2.new(1,-136,0,540),UDim2.new(0,122,0,36),
-    "📅 Ativar",Color3.fromRGB(55,85,200),12)
-
-local schedInfo=lbl(Main,UDim2.new(0,14,0,580),UDim2.new(1,-28,0,16),
-    "",10,Color3.fromRGB(180,180,180))
-schedInfo.TextXAlignment=Enum.TextXAlignment.Center
+mkDiv(Main, 182)
 
 -- ══════════════════════════════════════════════════════════════
---  LÓGICA DE ABAS  (dinâmica)
+--  SEÇÃO ABAS (y=189)
 -- ══════════════════════════════════════════════════════════════
-local tabButtons = {}  -- { btn, clan }
+mkLabel(Main, 14, 189, WW - 28, 18, "📂  CLÃS ATIVOS", 12, Color3.fromRGB(255, 200, 70), Enum.Font.GothamBold)
+
+local TabScroll = Instance.new("ScrollingFrame")
+TabScroll.Size = UDim2.new(1, -24, 0, 34); TabScroll.Position = UDim2.new(0, 12, 0, 209)
+TabScroll.BackgroundTransparency = 1; TabScroll.BorderSizePixel = 0
+TabScroll.ScrollBarThickness = 0; TabScroll.ScrollingDirection = Enum.ScrollingDirection.X
+TabScroll.CanvasSize = UDim2.new(0, 0, 0, 0); TabScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
+TabScroll.Parent = Main
+
+local TabLayout = Instance.new("UIListLayout")
+TabLayout.FillDirection = Enum.FillDirection.Horizontal
+TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabLayout.Padding = UDim.new(0, 6); TabLayout.Parent = TabScroll
+
+local noClansLbl = mkLabel(TabScroll, 0, 6, 260, 22, "Nenhum clã adicionado ainda.", 11, Color3.fromRGB(90, 90, 130))
+
+mkDiv(Main, 249)
+
+-- ══════════════════════════════════════════════════════════════
+--  PAINEL CLÃ SELECIONADO (y=256)
+-- ══════════════════════════════════════════════════════════════
+clanNameLbl            = mkLabel(Main, 14, 257, WW - 160, 20, "Selecione um clã acima", 12, Color3.fromRGB(160, 160, 200),
+    Enum.Font.GothamBold)
+clanCountLbl           = mkLabel(Main, WW - 148, 257, 136, 20, "", 12, Color3.fromRGB(160, 255, 160),
+    Enum.Font.GothamBold, Enum.TextXAlignment.Right)
+clanFileLbl            = mkLabel(Main, 14, 279, WW - 110, 14, "", 9, Color3.fromRGB(200, 170, 60))
+removeBtn              = mkBtn(Main, WW - 106, 275, 94, 20, "🗑 Remover Clã", Color3.fromRGB(110, 30, 30), 10)
+removeBtn.Visible      = false
+
+-- header tabela (y=298, h=22)
+local tHead            = Instance.new("Frame")
+tHead.Size             = UDim2.new(1, -24, 0, 22); tHead.Position = UDim2.new(0, 12, 0, 298)
+tHead.BackgroundColor3 = Color3.fromRGB(20, 20, 42); tHead.BorderSizePixel = 0; tHead.Parent = Main
+corner(tHead, 4)
+mkLabel(tHead, 6, 0, math.floor((WW - 24) * 0.44), 22, "USUÁRIO", 10, Color3.fromRGB(155, 155, 200), Enum.Font
+    .GothamBold)
+mkLabel(tHead, math.floor((WW - 24) * 0.44), 0, 62, 22, "ENTRADA", 10, Color3.fromRGB(155, 155, 200),
+    Enum.Font.GothamBold)
+mkLabel(tHead, (WW - 24) - 82, 0, 76, 22, "TEMPO", 10, Color3.fromRGB(155, 155, 200), Enum.Font.GothamBold,
+    Enum.TextXAlignment.Right)
+
+-- scroll lista (y=322, h=120)
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Size = UDim2.new(1, -24, 0, 120); Scroll.Position = UDim2.new(0, 12, 0, 322)
+Scroll.BackgroundColor3 = Color3.fromRGB(13, 13, 24); Scroll.BorderSizePixel = 0
+Scroll.ScrollBarThickness = 3; Scroll.ScrollBarImageColor3 = Color3.fromRGB(70, 90, 200)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 0); Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Scroll.Parent = Main; corner(Scroll, 6); stroke(Scroll, Color3.fromRGB(30, 30, 58), 1)
+
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder; ListLayout.Padding = UDim.new(0, 2); ListLayout.Parent = Scroll
+local lPad = Instance.new("UIPadding")
+lPad.PaddingTop = UDim.new(0, 3); lPad.PaddingLeft = UDim.new(0, 4); lPad.PaddingRight = UDim.new(0, 4); lPad.Parent =
+    Scroll
+
+local rows = {}
+local colW = WW - 24 - 8 -- largura útil dentro do scroll
+for i = 1, 16 do
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -0, 0, 22); row.BorderSizePixel = 0; row.LayoutOrder = i
+    row.BackgroundColor3 = (i % 2 == 0) and Color3.fromRGB(17, 17, 32) or Color3.fromRGB(13, 13, 24)
+    row.Visible = false; row.Parent = Scroll; corner(row, 3)
+    local nameW = math.floor(colW * 0.44)
+    local dot   = mkLabel(row, 3, 0, 14, 22, "🟢", 10, Color3.fromRGB(255, 255, 255))
+    local name  = mkLabel(row, 17, 0, nameW - 14, 22, "", 10, Color3.fromRGB(220, 220, 220))
+    local entry = mkLabel(row, nameW, 0, 64, 22, "", 10, Color3.fromRGB(140, 180, 140))
+    local dur   = mkLabel(row, colW - 80, 0, 78, 22, "", 10, Color3.fromRGB(255, 210, 80), Enum.Font.GothamBold,
+        Enum.TextXAlignment.Right)
+    rows[i]     = { frame = row, dot = dot, name = name, entry = entry, dur = dur }
+end
+
+mkDiv(Main, 448)
+
+-- ══════════════════════════════════════════════════════════════
+--  BOTÃO GRAVAR (y=456, h=38)
+-- ══════════════════════════════════════════════════════════════
+local recBtn = mkBtn(Main, 12, 456, WW - 24, 38, "⏺  INICIAR GRAVAÇÃO  (todos os clãs)", Color3.fromRGB(35, 165, 70), 13)
+
+mkDiv(Main, 500)
+
+-- ══════════════════════════════════════════════════════════════
+--  AGENDAMENTO (y=507)
+-- ══════════════════════════════════════════════════════════════
+mkLabel(Main, 14, 507, WW - 28, 16, "⏰  AGENDAMENTO AUTOMÁTICO", 12, Color3.fromRGB(255, 200, 70), Enum.Font.GothamBold)
+
+-- labels (y=526)
+mkLabel(Main, 12, 526, 100, 14, "▶ Início ( HH : MM )", 10, Color3.fromRGB(130, 210, 130))
+mkLabel(Main, 148, 526, 100, 14, "⏹ Fim  ( HH : MM )", 10, Color3.fromRGB(210, 130, 130))
+
+-- boxes e botão agendar na mesma linha (y=542, h=34)
+local sH = mkBox(Main, 12, 542, 44, 34, "21")
+mkLabel(Main, 60, 546, 14, 26, ":", 16, Color3.fromRGB(255, 255, 255), Enum.Font.GothamBold, Enum.TextXAlignment.Center)
+local sM = mkBox(Main, 76, 542, 44, 34, "00")
+
+local eH = mkBox(Main, 148, 542, 44, 34, "22")
+mkLabel(Main, 196, 546, 14, 26, ":", 16, Color3.fromRGB(255, 255, 255), Enum.Font.GothamBold, Enum.TextXAlignment.Center)
+local eM                 = mkBox(Main, 212, 542, 44, 34, "00")
+
+local autoBtn            = mkBtn(Main, WW - 130, 542, 118, 34, "📅  Ativar Agendamento", Color3.fromRGB(55, 85, 200), 11)
+
+-- feedback agendamento (y=582, h=20)
+schedInfo                = mkLabel(Main, 12, 582, WW - 24, 20, "", 10, Color3.fromRGB(180, 180, 180))
+schedInfo.TextXAlignment = Enum.TextXAlignment.Center
+
+-- ══════════════════════════════════════════════════════════════
+--  LÓGICA DAS ABAS
+-- ══════════════════════════════════════════════════════════════
+local tabButtons         = {}
 
 local function refreshList()
     if not activeClan then
-        for _, r in ipairs(rows) do r.frame.Visible=false end
-        return
+        for _, r in ipairs(rows) do r.frame.Visible = false end; return
     end
-    local ordered={}
-    for uid, info in pairs(activeClan.logs) do
-        ordered[#ordered+1]={uid=uid,info=info}
-    end
-    table.sort(ordered,function(a,b) return (a.info.idx or 0)<(b.info.idx or 0) end)
-    for i,r in ipairs(rows) do
-        local e=ordered[i]
+    local ord = {}
+    for uid, info in pairs(activeClan.logs) do ord[#ord + 1] = { uid = uid, info = info } end
+    table.sort(ord, function(a, b) return (a.info.idx or 0) < (b.info.idx or 0) end)
+    for i, r in ipairs(rows) do
+        local e = ord[i]
         if e then
-            local info=e.info
-            r.dot.Text   = info.online and "🟢" or "🔴"
-            r.name.Text  = info.displayName
+            local info = e.info
+            r.dot.Text = info.online and "🟢" or "🔴"
+            r.name.Text = info.displayName
             r.entry.Text = info.entryTime
-            r.dur.Text   = fmtDur(getCurrentSecs(info))
-            r.frame.Visible=true
-        else r.frame.Visible=false end
+            r.dur.Text = fmtDur(getCurrentSecs(info))
+            r.frame.Visible = true
+        else
+            r.frame.Visible = false
+        end
     end
 end
 
 local function selectClan(clan)
     activeClan = clan
-    -- atualiza highlight das abas
     for _, tb in ipairs(tabButtons) do
         if tb.clan == clan then
             tb.btn.BackgroundColor3 = tb.clan.color
-            stroke(tb.btn, Color3.fromRGB(255,255,255), 1.5)
+            local s = tb.btn:FindFirstChildOfClass("UIStroke") or Instance.new("UIStroke", tb.btn)
+            s.Color = Color3.fromRGB(255, 255, 255); s.Thickness = 1.5
         else
-            tb.btn.BackgroundColor3 = Color3.fromRGB(28,28,50)
-            -- remove stroke extra se tiver
-            local s=tb.btn:FindFirstChildOfClass("UIStroke")
-            if s then s:Destroy() end
+            tb.btn.BackgroundColor3 = Color3.fromRGB(28, 28, 50)
+            local s = tb.btn:FindFirstChildOfClass("UIStroke"); if s then s:Destroy() end
         end
     end
     if clan then
-        clanNameLbl.Text  = "📁 " .. clan.tag
-        clanNameLbl.TextColor3 = clan.color
+        clanNameLbl.Text = "📁 " .. clan.tag; clanNameLbl.TextColor3 = clan.color
         clanCountLbl.Text = "👥 " .. (clan.total or 0) .. " membros"
-        clanFileLbl.Text  = clan.file ~= "" and clan.file or clanFileName(clan)
+        clanFileLbl.Text = (clan.file ~= "" and clan.file or clanFileName(clan))
         removeBtn.Visible = true
     else
-        clanNameLbl.Text  = "Selecione um clã acima"
-        clanNameLbl.TextColor3 = Color3.fromRGB(160,160,200)
-        clanCountLbl.Text = ""
-        clanFileLbl.Text  = ""
-        removeBtn.Visible = false
+        clanNameLbl.Text = "Selecione um clã acima"; clanNameLbl.TextColor3 = Color3.fromRGB(160, 160, 200)
+        clanCountLbl.Text = ""; clanFileLbl.Text = ""; removeBtn.Visible = false
     end
     refreshList()
 end
 
 local function rebuildTabs()
-    -- limpa botões antigos
-    for _, tb in ipairs(tabButtons) do tb.btn:Destroy() end
-    tabButtons = {}
-
+    for _, tb in ipairs(tabButtons) do tb.btn:Destroy() end; tabButtons = {}
     noClansLbl.Visible = #clans == 0
-
     for i, clan in ipairs(clans) do
         local tb = Instance.new("TextButton")
-        tb.Size=UDim2.new(0,0,1,0); tb.AutomaticSize=Enum.AutomaticSize.X
-        tb.BackgroundColor3 = (activeClan==clan) and clan.color or Color3.fromRGB(28,28,50)
-        tb.Text=" "..clan.tag.." "
-        tb.TextColor3=Color3.fromRGB(255,255,255); tb.TextSize=12
-        tb.Font=Enum.Font.GothamBold; tb.BorderSizePixel=0
-        tb.LayoutOrder=i; tb.Parent=TabScroll
-        corner(tb,7)
-        if activeClan==clan then stroke(tb,Color3.fromRGB(255,255,255),1.5) end
-
-        local entry={btn=tb,clan=clan}
-        tabButtons[#tabButtons+1]=entry
-
+        tb.Size = UDim2.new(0, 0, 1, 0); tb.AutomaticSize = Enum.AutomaticSize.X
+        tb.BackgroundColor3 = (activeClan == clan) and clan.color or Color3.fromRGB(28, 28, 50)
+        tb.Text = "  " .. clan.tag .. "  "
+        tb.TextColor3 = Color3.fromRGB(255, 255, 255); tb.TextSize = 12
+        tb.Font = Enum.Font.GothamBold; tb.BorderSizePixel = 0
+        tb.LayoutOrder = i; tb.Parent = TabScroll; corner(tb, 7)
+        if activeClan == clan then
+            local s = Instance.new("UIStroke", tb); s.Color = Color3.fromRGB(255, 255, 255); s.Thickness = 1.5
+        end
+        local entry = { btn = tb, clan = clan }; tabButtons[#tabButtons + 1] = entry
         tb.MouseButton1Click:Connect(function()
-            selectClan(clan)
-            rebuildTabs()
+            selectClan(clan); rebuildTabs()
         end)
     end
 end
 
 -- ══════════════════════════════════════════════════════════════
---  ADICIONAR CLÃ
+--  EVENTOS
 -- ══════════════════════════════════════════════════════════════
 addBtn.MouseButton1Click:Connect(function()
-    local tag    = tagBox.Text:match("^%s*(.-)%s*$")
-    local prefix = prefixBox.Text:match("^%s*(.-)%s*$")
-    local suffix = suffixBox.Text:match("^%s*(.-)%s*$")
-
+    local tag = tagBox.Text:match("^%s*(.-)%s*$")
+    local pre = prefixBox.Text:match("^%s*(.-)%s*$")
+    local suf = suffixBox.Text:match("^%s*(.-)%s*$")
     if tag == "" then
-        addInfo.Text="⚠ Digite um nome/tag para o clã!"
-        addInfo.TextColor3=Color3.fromRGB(255,100,100); return
+        addInfo.Text = "⚠ Digite um nome/tag!"; addInfo.TextColor3 = Color3.fromRGB(255, 100, 100); return
     end
-    if prefix == "" and suffix == "" then
-        addInfo.Text="⚠ Preencha pelo menos prefixo ou sufixo!"
-        addInfo.TextColor3=Color3.fromRGB(255,100,100); return
+    if pre == "" and suf == "" then
+        addInfo.Text = "⚠ Preencha prefixo e/ou sufixo!"; addInfo.TextColor3 = Color3.fromRGB(255, 100, 100); return
     end
-    -- verifica duplicata
     for _, c in ipairs(clans) do
-        if c.tag:upper()==tag:upper() then
-            addInfo.Text="⚠ Clã '"..tag.."' já existe!"
-            addInfo.TextColor3=Color3.fromRGB(255,180,50); return
+        if c.tag:upper() == tag:upper() then
+            addInfo.Text = "⚠ Clã '" .. tag .. "' já existe!"; addInfo.TextColor3 = Color3.fromRGB(255, 180, 50); return
         end
     end
     if #clans >= 8 then
-        addInfo.Text="⚠ Máximo de 8 clãs simultâneos."
-        addInfo.TextColor3=Color3.fromRGB(255,100,100); return
+        addInfo.Text = "⚠ Máximo 8 clãs."; addInfo.TextColor3 = Color3.fromRGB(255, 100, 100); return
     end
-
-    local newClan = {
-        tag    = tag,
-        prefix = prefix,
-        suffix = suffix,
-        color  = CLAN_COLORS[(#clans % #CLAN_COLORS) + 1],
-        logs   = {},
-        total  = 0,
-        file   = "",
+    local nc = {
+        tag = tag,
+        prefix = pre,
+        suffix = suf,
+        color = CLAN_COLORS[(#clans % #CLAN_COLORS) + 1],
+        logs = {},
+        total = 0,
+        file =
+        ""
     }
-    clans[#clans+1] = newClan
-
-    -- limpa campos
-    tagBox.Text=""; prefixBox.Text=""; suffixBox.Text=""
-    addInfo.Text = string.format("✅ Clã '%s' adicionado! (pref='%s' suf='%s')",
-        tag, prefix, suffix)
-    addInfo.TextColor3=Color3.fromRGB(100,255,150)
-
-    if not activeClan then selectClan(newClan) end
+    clans[#clans + 1] = nc
+    tagBox.Text = ""; prefixBox.Text = ""; suffixBox.Text = ""
+    addInfo.Text = string.format("✅ '%s' adicionado! (pref='%s'  suf='%s')", tag, pre, suf)
+    addInfo.TextColor3 = Color3.fromRGB(100, 255, 150)
+    if not activeClan then selectClan(nc) end
     rebuildTabs()
-
-    print(string.format("[Logger] ➕ Clã adicionado: %s | pref='%s' suf='%s'",
-        tag, prefix, suffix))
 end)
 
--- ══════════════════════════════════════════════════════════════
---  REMOVER CLÃ
--- ══════════════════════════════════════════════════════════════
 removeBtn.MouseButton1Click:Connect(function()
     if not activeClan then return end
-    if isRecording then
-        -- finaliza arquivo deste clã antes de remover
-        saveClan(activeClan, true)
-    end
-    -- remove da lista
+    if isRecording then saveClan(activeClan, true) end
     for i, c in ipairs(clans) do
-        if c == activeClan then table.remove(clans, i); break end
+        if c == activeClan then
+            table.remove(clans, i); break
+        end
     end
-    activeClan = clans[1] or nil
-    selectClan(activeClan)
-    rebuildTabs()
-    addInfo.Text="🗑 Clã removido."; addInfo.TextColor3=Color3.fromRGB(200,200,200)
+    activeClan = clans[1] or nil; selectClan(activeClan); rebuildTabs()
+    addInfo.Text = "🗑 Clã removido."; addInfo.TextColor3 = Color3.fromRGB(200, 200, 200)
 end)
 
--- ══════════════════════════════════════════════════════════════
---  GRAVAR
--- ══════════════════════════════════════════════════════════════
 recBtn.MouseButton1Click:Connect(function()
     if #clans == 0 then
-        addInfo.Text="⚠ Adicione pelo menos 1 clã antes de gravar!"
-        addInfo.TextColor3=Color3.fromRGB(255,100,100); return
+        addInfo.Text = "⚠ Adicione pelo menos 1 clã!"; addInfo.TextColor3 = Color3.fromRGB(255, 100, 100); return
     end
     if not isRecording then
         startRecording()
-        recBtn.Text="⏹  PARAR GRAVAÇÃO (todos os clãs)"
-        recBtn.BackgroundColor3=Color3.fromRGB(200,50,50)
-        statusLbl.Text="🔴 Gravando..."; statusLbl.TextColor3=Color3.fromRGB(255,80,80)
+        recBtn.Text = "⏹  PARAR GRAVAÇÃO  (todos os clãs)"; recBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        statusLbl.Text = "🔴 Gravando..."; statusLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
     else
         stopRecording()
-        recBtn.Text="⏺  INICIAR GRAVAÇÃO (todos os clãs)"
-        recBtn.BackgroundColor3=Color3.fromRGB(35,165,70)
-        statusLbl.Text="✅ Finalizado!"; statusLbl.TextColor3=Color3.fromRGB(100,255,100)
+        recBtn.Text = "⏺  INICIAR GRAVAÇÃO  (todos os clãs)"; recBtn.BackgroundColor3 = Color3.fromRGB(35, 165, 70)
+        statusLbl.Text = "✅ Finalizado!"; statusLbl.TextColor3 = Color3.fromRGB(100, 255, 100)
     end
 end)
 
--- ══════════════════════════════════════════════════════════════
---  AGENDAMENTO
--- ══════════════════════════════════════════════════════════════
 autoBtn.MouseButton1Click:Connect(function()
     if not autoEnabled then
         if #clans == 0 then
-            schedInfo.Text="⚠ Adicione clãs antes de agendar!"
-            schedInfo.TextColor3=Color3.fromRGB(255,100,100); return
+            schedInfo.Text = "⚠ Adicione clãs antes!"; schedInfo.TextColor3 = Color3.fromRGB(255, 100, 100); return
         end
-        local sh,sm2,eh2,em2=tonumber(sH.Text),tonumber(sM.Text),tonumber(eH.Text),tonumber(eM.Text)
-        if not(sh and sm2 and eh2 and em2) or sh>23 or sm2>59 or eh2>23 or em2>59 then
-            schedInfo.Text="⚠ Horários inválidos!"; schedInfo.TextColor3=Color3.fromRGB(255,100,100); return
+        local sh, sm2, eh2, em2 = tonumber(sH.Text), tonumber(sM.Text), tonumber(eH.Text), tonumber(eM.Text)
+        if not (sh and sm2 and eh2 and em2) or sh > 23 or sm2 > 59 or eh2 > 23 or em2 > 59 then
+            schedInfo.Text = "⚠ Horários inválidos!"; schedInfo.TextColor3 = Color3.fromRGB(255, 100, 100); return
         end
-        autoStartH,autoStartM,autoStopH,autoStopM=sh,sm2,eh2,em2
-        autoEnabled=true; autoStartFired=false; autoStopFired=false
-        sH.TextEditable=false; sM.TextEditable=false; eH.TextEditable=false; eM.TextEditable=false
-        autoBtn.Text="❌ Cancelar"; autoBtn.BackgroundColor3=Color3.fromRGB(180,50,50)
-        schedInfo.Text=string.format("✅ %02d:%02d → %02d:%02d  |  %d clã(s)",sh,sm2,eh2,em2,#clans)
-        schedInfo.TextColor3=Color3.fromRGB(100,255,150)
+        autoStartH, autoStartM, autoStopH, autoStopM = sh, sm2, eh2, em2
+        autoEnabled = true; autoStartFired = false; autoStopFired = false
+        sH.TextEditable = false; sM.TextEditable = false; eH.TextEditable = false; eM.TextEditable = false
+        autoBtn.Text = "❌  Cancelar Agendamento"; autoBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        schedInfo.Text = string.format("✅ Agendado: %02d:%02d → %02d:%02d  |  %d clã(s)", sh, sm2, eh2, em2, #clans)
+        schedInfo.TextColor3 = Color3.fromRGB(100, 255, 150)
     else
-        autoEnabled=false
-        sH.TextEditable=true; sM.TextEditable=true; eH.TextEditable=true; eM.TextEditable=true
-        autoBtn.Text="📅 Ativar"; autoBtn.BackgroundColor3=Color3.fromRGB(55,85,200)
-        schedInfo.Text="🚫 Agendamento cancelado."; schedInfo.TextColor3=Color3.fromRGB(200,200,200)
+        autoEnabled = false
+        sH.TextEditable = true; sM.TextEditable = true; eH.TextEditable = true; eM.TextEditable = true
+        autoBtn.Text = "📅  Ativar Agendamento"; autoBtn.BackgroundColor3 = Color3.fromRGB(55, 85, 200)
+        schedInfo.Text = "🚫 Agendamento cancelado."; schedInfo.TextColor3 = Color3.fromRGB(200, 200, 200)
     end
 end)
 
@@ -774,53 +724,83 @@ xBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ══════════════════════════════════════════════════════════════
+--  RETOMADA AUTOMÁTICA AO INJETAR
+-- ══════════════════════════════════════════════════════════════
+task.defer(function()
+    -- tenta carregar clãs de arquivos existentes hoje na pasta
+    ensureFolder()
+    -- só restaura configs de agendamento se houver algum arquivo de hoje
+    local found = false
+    pcall(function()
+        local files = listfiles and listfiles(CFG.LOG_FOLDER) or {}
+        local today = dateOnly()
+        for _, path in ipairs(files) do
+            if path:find(today) and path:find("_LOG_") then
+                local ex = safeRead(path)
+                if ex and #ex > 0 then
+                    local cfg = parseConfig(ex)
+                    if cfg.startH and not found then
+                        found = true
+                        autoStartH = cfg.startH; autoStartM = cfg.startM
+                        autoStopH = cfg.stopH; autoStopM = cfg.stopM
+                        sH.Text = string.format("%02d", autoStartH)
+                        sM.Text = string.format("%02d", autoStartM)
+                        eH.Text = string.format("%02d", autoStopH)
+                        eM.Text = string.format("%02d", autoStopM)
+                        schedInfo.Text = "💾 Configs de agendamento restauradas do último save!"
+                        schedInfo.TextColor3 = Color3.fromRGB(100, 220, 255)
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+-- ══════════════════════════════════════════════════════════════
 --  LOOP PRINCIPAL
 -- ══════════════════════════════════════════════════════════════
 task.spawn(function()
-    local autoSaveTimer=0
+    local autoSaveTimer = 0
     while ScreenGui.Parent do
         task.wait(1)
-        local H,M,S=nowH(),nowM(),nowS()
-        clockLbl.Text=string.format("🕐 %02d:%02d:%02d",H,M,S)
+        local H, M, S = nowH(), nowM(), nowS()
+        clockLbl.Text = string.format("🕐 %02d:%02d:%02d", H, M, S)
 
         if isRecording then
-            autoSaveTimer=autoSaveTimer+1
-            if autoSaveTimer>=CFG.AUTOSAVE_IV then
-                autoSaveTimer=0; saveAllClans(false)
+            autoSaveTimer = autoSaveTimer + 1
+            if autoSaveTimer >= CFG.AUTOSAVE_IV then
+                autoSaveTimer = 0; saveAllClans(false)
             end
-            local elapsed=math.floor(tick()-recStart)
-            statusLbl.Text="🔴 Gravando... "..fmtDur(elapsed)
-            statusLbl.TextColor3=Color3.fromRGB(255,80,80)
-        else autoSaveTimer=0 end
+            statusLbl.Text = "🔴 Gravando... " .. fmtDur(tick() - recStart)
+            statusLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+        else
+            autoSaveTimer = 0
+        end
 
-        -- Atualiza painel do clã ativo
         if activeClan then
-            clanCountLbl.Text="👥 "..(activeClan.total or 0).." membros"
+            clanCountLbl.Text = "👥 " .. (activeClan.total or 0) .. " membros"
             refreshList()
         end
 
-        -- Agendamento
         if autoEnabled then
-            if not autoStartFired and H==autoStartH and M==autoStartM then
-                autoStartFired=true; startRecording()
-                recBtn.Text="⏹  PARAR GRAVAÇÃO (todos os clãs)"
-                recBtn.BackgroundColor3=Color3.fromRGB(200,50,50)
-                schedInfo.Text=string.format("▶ Iniciado às %02d:%02d! (%d clã(s))",H,M,#clans)
-                schedInfo.TextColor3=Color3.fromRGB(100,255,150)
+            if not autoStartFired and H == autoStartH and M == autoStartM then
+                autoStartFired = true; startRecording()
+                recBtn.Text = "⏹  PARAR GRAVAÇÃO  (todos os clãs)"; recBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                schedInfo.Text = string.format("▶ Iniciado automaticamente às %02d:%02d! (%d clã(s))", H, M, #clans)
+                schedInfo.TextColor3 = Color3.fromRGB(100, 255, 150)
             end
-            if not autoStopFired and H==autoStopH and M==autoStopM then
+            if not autoStopFired and H == autoStopH and M == autoStopM then
                 if isRecording then
-                    autoStopFired=true; stopRecording()
-                    recBtn.Text="⏺  INICIAR GRAVAÇÃO (todos os clãs)"
-                    recBtn.BackgroundColor3=Color3.fromRGB(35,165,70)
-                    local total=0
-                    for _,c in ipairs(clans) do total=total+(c.total or 0) end
-                    schedInfo.Text=string.format("⏹ Finalizado às %02d:%02d! Total geral: %d",H,M,total)
-                    schedInfo.TextColor3=Color3.fromRGB(255,200,80)
+                    autoStopFired = true; stopRecording()
+                    recBtn.Text = "⏺  INICIAR GRAVAÇÃO  (todos os clãs)"; recBtn.BackgroundColor3 = Color3.fromRGB(35,
+                        165, 70)
+                    local total = 0; for _, c in ipairs(clans) do total = total + (c.total or 0) end
+                    schedInfo.Text = string.format("⏹ Finalizado às %02d:%02d! Total geral: %d membro(s)", H, M, total)
+                    schedInfo.TextColor3 = Color3.fromRGB(255, 200, 80)
                 end
             end
         end
     end
 end)
 
-print("[Clan Logger v5.0] ✅ Carregado! Pasta: " .. CFG.LOG_FOLDER)
+print("[Clan Logger v5.1] ✅ Carregado! Pasta: " .. CFG.LOG_FOLDER)
