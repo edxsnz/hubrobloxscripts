@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.18"
+local HUB_VERSION = "0.1.19"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
@@ -75,15 +75,41 @@ local function getGameName(placeId)
 end
 
 -- Função para executar script (compatível com Potassium/executores)
+-- Compatibilidade cross-executor: HTTP
+local function httpGet(url)
+    if syn and syn.request then
+        local res = syn.request({Url=url, Method="GET"})
+        return res and res.Body
+    elseif http and http.request then
+        local res = http.request({Url=url, Method="GET"})
+        return res and res.Body
+    elseif request then
+        local res = request({Url=url, Method="GET"})
+        return res and res.Body
+    elseif game.HttpGet then
+        return game:HttpGet(url)
+    end
+    return nil
+end
+
+-- Compatibilidade cross-executor: loadstring
+local function getLoader()
+    if syn and syn.loadstring then return syn.loadstring end
+    if (typeof(potassium) == "table") and potassium.loadstring then return potassium.loadstring end
+    if loadstring then return loadstring end
+    if load then return load end
+    return nil
+end
+
 local function runScript(url, scriptNumber, totalScripts, scriptName)
     print("📦 Executando script " ..
         scriptNumber .. "/" .. totalScripts .. (scriptName and (" (" .. scriptName .. ")") or "") .. "...")
 
     local success, errorMsg = pcall(function()
-        local content = game:HttpGet(url)
+        local content = httpGet(url)
         if not content or content == "" then error("HttpGet retornou vazio") end
 
-        local loader = (potassium and potassium.loadstring) or loadstring or load
+        local loader = getLoader()
         if not loader then error("Nenhum loader disponível") end
 
         task.spawn(function()

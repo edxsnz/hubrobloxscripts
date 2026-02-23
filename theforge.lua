@@ -149,10 +149,36 @@ local success, result = pcall(function()
     if scriptUrl and scriptUrl ~= "" then
         print("📦 Carregando script do modo: " .. mode)
 
+        -- Compatibilidade cross-executor: HTTP
+        local function httpGet(url)
+            if syn and syn.request then
+                local res = syn.request({Url=url, Method="GET"})
+                return res and res.Body
+            elseif http and http.request then
+                local res = http.request({Url=url, Method="GET"})
+                return res and res.Body
+            elseif request then
+                local res = request({Url=url, Method="GET"})
+                return res and res.Body
+            elseif game.HttpGet then
+                return game:HttpGet(url)
+            end
+            return nil
+        end
+
+        -- Compatibilidade cross-executor: loadstring
+        local function getLoader()
+            if syn and syn.loadstring then return syn.loadstring end
+            if (typeof(potassium) == "table") and potassium.loadstring then return potassium.loadstring end
+            if loadstring then return loadstring end
+            if load then return load end
+            return nil
+        end
+
         -- Baixar e executar o script
-        local content = game:HttpGet(scriptUrl)
+        local content = httpGet(scriptUrl)
         if content and content ~= "" then
-            local loader = (potassium and potassium.loadstring) or loadstring or load
+            local loader = getLoader()
             if loader then
                 local func = loader(content)
                 if func then

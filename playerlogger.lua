@@ -1,7 +1,34 @@
 -- ╔══════════════════════════════════════════════════════════════╗
--- ║         Clan Member Logger  v5.1  —  Potassium              ║
+-- ║              Clan Member Logger                              ║
 -- ║  Multi-Clã · Prefixo+Sufixo · Arquivo por Clã · Presença   ║
 -- ╚══════════════════════════════════════════════════════════════╝
+
+-- ════════════════════════════════════════════════════════════
+--  COMPATIBILIDADE CROSS-EXECUTOR
+-- ════════════════════════════════════════════════════════════
+local function _isfolder(p)
+    if isfolder then return isfolder(p)
+    elseif syn and syn.is_folder then return syn.is_folder(p)
+    else return false end
+end
+local function _makefolder(p)
+    if makefolder then return makefolder(p)
+    elseif syn and syn.make_folder then return syn.make_folder(p) end
+end
+local function _readfile(p)
+    if readfile then return readfile(p)
+    elseif syn and syn.read_file then return syn.read_file(p) end
+    return nil
+end
+local function _writefile(p,c)
+    if writefile then return writefile(p,c)
+    elseif syn and syn.write_file then return syn.write_file(p,c) end
+end
+local function _listfiles(p)
+    if listfiles then return listfiles(p)
+    elseif syn and syn.list_files then return syn.list_files(p)
+    else return {} end
+end
 
 local Players = game:GetService("Players")
 local MktSvc  = game:GetService("MarketplaceService")
@@ -54,11 +81,11 @@ pcall(function() gameName = MktSvc:GetProductInfo(game.PlaceId).Name end)
 -- ══════════════════════════════════════════════════════════════
 local function ensureFolder()
     pcall(function()
-        if not isfolder(CFG.LOG_FOLDER) then makefolder(CFG.LOG_FOLDER) end
+        if not _isfolder(CFG.LOG_FOLDER) then _makefolder(CFG.LOG_FOLDER) end
     end)
 end
-local function safeRead(p)  local ok,d=pcall(readfile,p);  return (ok and d) or nil end
-local function safeWrite(p,c) pcall(writefile,p,c) end
+local function safeRead(p)  local ok,d=pcall(_readfile,p);  return (ok and d) or nil end
+local function safeWrite(p,c) pcall(_writefile,p,c) end
 local function clanFileName(clan)
     return CFG.LOG_FOLDER.."/"..clan.tag:gsub("[^%w%-]","_").."_LOG_"..dateOnly()..".txt"
 end
@@ -247,11 +274,11 @@ local CLAN_COLORS={
 -- ══════════════════════════════════════════════════════════════
 --  GUI — helpers
 -- ══════════════════════════════════════════════════════════════
-local prev=game:GetService("CoreGui"):FindFirstChild("ClanLoggerV51")
+local prev=game:GetService("CoreGui"):FindFirstChild("ClanLogger")
 if prev then prev:Destroy() end
 
 local ScreenGui=Instance.new("ScreenGui")
-ScreenGui.Name="ClanLoggerV51"; ScreenGui.ResetOnSpawn=false
+ScreenGui.Name="ClanLogger"; ScreenGui.ResetOnSpawn=false
 ScreenGui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent=game:GetService("CoreGui")
 
@@ -365,17 +392,16 @@ end
 -- ── TitleBar (y=0, h=44) ────────────────────────────────────
 local TBar=Instance.new("Frame")
 TBar.Size=UDim2.new(1,0,0,44); TBar.Position=UDim2.new(0,0,0,0)
-TBar.BackgroundColor3=Color3.fromRGB(16,16,36); TBar.BorderSizePixel=0; TBar.Parent=Main
-corner(TBar,12)
+TBar.BackgroundTransparency=1; TBar.BorderSizePixel=0; TBar.Parent=Main
 
-mkLabel(TBar,14,0,WW-54,44,"⬡  Clan Member Logger  v5.1",14,
+mkLabel(TBar,14,0,WW-54,44,"  Clan Member Logger",14,
     Color3.fromRGB(255,255,255),Enum.Font.GothamBold)
 
 local xBtn=Instance.new("TextButton")
-xBtn.Size=UDim2.new(0,26,0,26); xBtn.Position=UDim2.new(1,-34,0,9)
-xBtn.BackgroundColor3=Color3.fromRGB(160,35,35); xBtn.Text="✕"
-xBtn.TextColor3=Color3.fromRGB(255,255,255); xBtn.TextSize=12
-xBtn.Font=Enum.Font.GothamBold; xBtn.BorderSizePixel=0; xBtn.Parent=TBar; corner(xBtn,6)
+xBtn.Size=UDim2.new(0,28,0,28); xBtn.Position=UDim2.new(1,-36,0,8)
+xBtn.BackgroundColor3=Color3.fromRGB(160,35,35); xBtn.Text="X"
+xBtn.TextColor3=Color3.fromRGB(255,255,255); xBtn.TextSize=14
+xBtn.Font=Enum.Font.GothamBold; xBtn.BorderSizePixel=0; xBtn.Parent=TBar; corner(xBtn,7)
 
 -- ── Status + Clock (y=50, h=22) ────────────────────────────
 statusLbl = mkLabel(Main,14,50,WW-160,22,"⚪ Aguardando...",13,Color3.fromRGB(180,180,180),Enum.Font.Gotham)
@@ -500,7 +526,8 @@ local eH   = mkBox(Main,148,542,44,34,"22")
 mkLabel(Main,196,546,14,26,":",16,Color3.fromRGB(255,255,255),Enum.Font.GothamBold,Enum.TextXAlignment.Center)
 local eM   = mkBox(Main,212,542,44,34,"00")
 
-local autoBtn=mkBtn(Main,WW-130,542,118,34,"📅  Ativar Agendamento",Color3.fromRGB(55,85,200),11)
+local autoBtn=mkBtn(Main,WW-138,542,128,34,"📅 Ativar",Color3.fromRGB(55,85,200),13)
+autoBtn.AutomaticSize=Enum.AutomaticSize.None
 
 -- feedback agendamento (y=582, h=20)
 schedInfo = mkLabel(Main,12,582,WW-24,20,"",10,Color3.fromRGB(180,180,180))
@@ -625,13 +652,13 @@ autoBtn.MouseButton1Click:Connect(function()
         autoStartH,autoStartM,autoStopH,autoStopM=sh,sm2,eh2,em2
         autoEnabled=true; autoStartFired=false; autoStopFired=false
         sH.TextEditable=false; sM.TextEditable=false; eH.TextEditable=false; eM.TextEditable=false
-        autoBtn.Text="❌  Cancelar Agendamento"; autoBtn.BackgroundColor3=Color3.fromRGB(180,50,50)
+        autoBtn.Text="❌ Cancelar"; autoBtn.BackgroundColor3=Color3.fromRGB(180,50,50)
         schedInfo.Text=string.format("✅ Agendado: %02d:%02d → %02d:%02d  |  %d clã(s)",sh,sm2,eh2,em2,#clans)
         schedInfo.TextColor3=Color3.fromRGB(100,255,150)
     else
         autoEnabled=false
         sH.TextEditable=true; sM.TextEditable=true; eH.TextEditable=true; eM.TextEditable=true
-        autoBtn.Text="📅  Ativar Agendamento"; autoBtn.BackgroundColor3=Color3.fromRGB(55,85,200)
+        autoBtn.Text="📅 Ativar"; autoBtn.BackgroundColor3=Color3.fromRGB(55,85,200)
         schedInfo.Text="🚫 Agendamento cancelado."; schedInfo.TextColor3=Color3.fromRGB(200,200,200)
     end
 end)
@@ -649,7 +676,7 @@ task.defer(function()
     -- só restaura configs de agendamento se houver algum arquivo de hoje
     local found=false
     pcall(function()
-        local files=listfiles and listfiles(CFG.LOG_FOLDER) or {}
+        local files=_listfiles(CFG.LOG_FOLDER)
         local today=dateOnly()
         for _,path in ipairs(files) do
             if path:find(today) and path:find("_LOG_") then
@@ -715,4 +742,4 @@ task.spawn(function()
     end
 end)
 
-print("[Clan Logger v5.1] ✅ Carregado! Pasta: "..CFG.LOG_FOLDER)
+print("[Clan Logger] ✅ Carregado! Pasta: "..CFG.LOG_FOLDER)
