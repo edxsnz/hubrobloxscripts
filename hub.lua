@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.21"
+local HUB_VERSION = "0.1.22"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
@@ -140,7 +140,7 @@ end
 local function showBanner()
     print("\n" .. string.rep("=", 50))
     print("🚀 GAME HUB (" .. HUB_VERSION .. ")")
-    print("🎮 " .. getGameName(game.placeId))
+    print("🎮 " .. getGameName(game.PlaceId))
     print("👤 " .. game.Players.LocalPlayer.Name)
     print("📅 " .. os.date("%H:%M:%S"))
     print(string.rep("=", 50))
@@ -152,10 +152,17 @@ showBanner()
 local gameId = game.GameId
 local scriptList, scriptType = {}, ""
 
+local function inSharedGames(id)
+    for _, v in ipairs(sharedGames) do
+        if v == id then return true end
+    end
+    return false
+end
+
 if scripts[gameId] then
     scriptList = scripts[gameId]
     scriptType = "específicos"
-elseif table.find(sharedGames, gameId) then
+elseif inSharedGames(gameId) then
     scriptList = sharedScripts
     scriptType = "compartilhados"
 else

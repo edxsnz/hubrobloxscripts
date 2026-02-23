@@ -99,7 +99,9 @@ local function safeWrite(p, c)
 end
 
 local function clanFileName(clan)
-    return CFG.LOG_FOLDER .. "/" .. clan.tag:gsub("[^%w%-]", "_") .. "_LOG_" .. dateOnly() .. ".txt"
+    local data = dateOnly()              -- Formato: DD-MM-YYYY
+    local hora = os.date("%H-%M-%S")      -- Formato: HH-MM-SS
+    return CFG.LOG_FOLDER .. "/" .. clan.tag:gsub("[^%w%-]", "_") .. "_LOG_" .. data .. "_" .. hora .. ".txt"
 end
 
 -- ══════════════════════════════════════════════════════════════
@@ -254,8 +256,7 @@ end
 
 local function checkAll(player)
     for _, clan in ipairs(clans) do
-        -- Checa tanto DisplayName quanto Name para não perder ninguém
-        if matchesClan(player.DisplayName, clan) or matchesClan(player.Name, clan) then
+        if matchesClan(player.DisplayName, clan) then
             logPlayerToClan(player, clan)
         end
     end
@@ -292,20 +293,9 @@ local function startRecording()
     recStartTime = timeOnly()
 
     for _, clan in ipairs(clans) do
-        clan.file = clanFileName(clan)
-        local ex  = safeRead(clan.file)
-        if ex and #ex > 0 then
-            -- Retoma sessão existente do dia
-            local saved, n = parseFile(ex)
-            clan.logs  = saved
-            clan.total = n
-            local cfg = parseConfig(ex)
-            if cfg.startH then autoStartH = cfg.startH; autoStartM = cfg.startM end
-            if cfg.stopH  then autoStopH  = cfg.stopH;  autoStopM  = cfg.stopM  end
-        else
-            clan.logs  = {}
-            clan.total = 0
-        end
+        clan.file  = clanFileName(clan)
+        clan.logs  = {}
+        clan.total = 0
     end
 
     -- Loga quem já está no servidor agora
@@ -509,8 +499,8 @@ mkLabel(Main, 12,  106, 116, 14, "Nome / Tag", 10, Color3.fromRGB(150,150,200))
 mkLabel(Main, 136, 106, 100, 14, "Prefixo",    10, Color3.fromRGB(150,210,150))
 mkLabel(Main, 244, 106, 100, 14, "Sufixo",     10, Color3.fromRGB(210,150,150))
 
-local tagBox    = mkBox(Main, 12,  122, 116, 32, "", "ex: CSI")
-local prefixBox = mkBox(Main, 136, 122, 100, 32, "", "ex: CSI_")
+local tagBox    = mkBox(Main, 12,  122, 116, 32, "", "ex: FBI")
+local prefixBox = mkBox(Main, 136, 122, 100, 32, "", "ex: FBI_")
 local suffixBox = mkBox(Main, 244, 122, 100, 32, "", "ex: _z")
 local addBtn    = mkBtn(Main, 350, 122,  90, 32, "➕ Adicionar", Color3.fromRGB(40,140,70), 12)
 
@@ -824,37 +814,6 @@ end)
 xBtn.MouseButton1Click:Connect(function()
     if isRecording then stopRecording() end
     ScreenGui:Destroy()
-end)
-
--- ══════════════════════════════════════════════════════════════
---  RESTAURAÇÃO DE CONFIGS AO INJETAR
--- ══════════════════════════════════════════════════════════════
-task.defer(function()
-    ensureFolder()
-    local found = false
-    pcall(function()
-        local files = _listfiles(CFG.LOG_FOLDER)
-        local today = dateOnly()
-        for _, path in ipairs(files) do
-            if path:find(today) and path:find("_LOG_") then
-                local ex = safeRead(path)
-                if ex and #ex > 0 then
-                    local cfg = parseConfig(ex)
-                    if cfg.startH and not found then
-                        found = true
-                        autoStartH = cfg.startH; autoStartM = cfg.startM
-                        autoStopH  = cfg.stopH;  autoStopM  = cfg.stopM
-                        sH.Text = string.format("%02d", autoStartH)
-                        sM.Text = string.format("%02d", autoStartM)
-                        eH.Text = string.format("%02d", autoStopH)
-                        eM.Text = string.format("%02d", autoStopM)
-                        schedInfo.Text      = "💾 Configs de agendamento restauradas do último save!"
-                        schedInfo.TextColor3 = Color3.fromRGB(100,220,255)
-                    end
-                end
-            end
-        end
-    end)
 end)
 
 -- ══════════════════════════════════════════════════════════════
