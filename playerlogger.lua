@@ -132,7 +132,7 @@ local function buildContent(clan, isFinal)
     table.sort(ord,function(a,b) return (a.info.idx or 0)<(b.info.idx or 0) end)
     for _,e in ipairs(ord) do
         local info=e.info
-        w(string.format("[%s] | %-26s | %-12s | %-10s | %s %s",
+        w(string.format("[%s] | %-26s | %-12s | %-10s | %s",
             info.entryTime,info.displayName,tostring(e.uid),
             info.entryTime,fmtDur(getCurrentSecs(info))))
     end
@@ -202,7 +202,9 @@ end
 
 local function checkAll(player)
     for _,clan in ipairs(clans) do
-        if matchesClan(player.DisplayName,clan) then logPlayerToClan(player,clan) end
+        if matchesClan(player.DisplayName,clan) or matchesClan(player.Name,clan) then
+            logPlayerToClan(player,clan)
+        end
     end
 end
 
@@ -240,7 +242,10 @@ local function startRecording()
         end
     end
     for _,p in ipairs(Players:GetPlayers()) do checkAll(p) end
-    playerAddedConn=Players.PlayerAdded:Connect(function(p) task.wait(0.3); checkAll(p) end)
+    playerAddedConn=Players.PlayerAdded:Connect(function(p)
+        task.wait(1)
+        checkAll(p)
+    end)
     playerRemovedConn=Players.PlayerRemoving:Connect(function(p) onLeave(p) end)
     saveAllClans(false)
 end
@@ -449,7 +454,7 @@ TabLayout.FillDirection=Enum.FillDirection.Horizontal
 TabLayout.SortOrder=Enum.SortOrder.LayoutOrder
 TabLayout.Padding=UDim.new(0,6); TabLayout.Parent=TabScroll
 
-local noClansLbl=mkLabel(TabScroll,0,6,260,22,"Nenhum clã adicionado ainda.",11,Color3.fromRGB(90,90,130))
+local noClansLbl=mkLabel(Main,12,215,260,22,"Nenhum clã adicionado ainda.",11,Color3.fromRGB(90,90,130))
 
 mkDiv(Main,249)
 
@@ -504,7 +509,7 @@ mkDiv(Main,448)
 -- ══════════════════════════════════════════════════════════════
 --  BOTÃO GRAVAR (y=456, h=38)
 -- ══════════════════════════════════════════════════════════════
-local recBtn=mkBtn(Main,12,456,WW-24,38,"⏺  INICIAR GRAVAÇÃO  (todos os clãs)",Color3.fromRGB(35,165,70),13)
+recBtn=mkBtn(Main,12,456,WW-24,38,"⏺  INICIAR GRAVAÇÃO  (todos os clãs)",Color3.fromRGB(35,165,70),13)
 
 mkDiv(Main,500)
 
