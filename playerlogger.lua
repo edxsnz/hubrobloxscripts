@@ -108,6 +108,7 @@ end
 --  MATCH DE CLÃ
 -- ══════════════════════════════════════════════════════════════
 local function matchesClan(dn, clan)
+    if not dn or dn == "" then return false end
     local d   = dn:upper()
     local pre = (clan.prefix or ""):upper()
     local suf = (clan.suffix or ""):upper()
@@ -174,6 +175,7 @@ local function buildContent(clan, isFinal)
 end
 
 local function saveClan(clan, isFinal)
+    if not clan.file or clan.file == "" then return end
     safeWrite(clan.file, buildContent(clan, isFinal))
 end
 
@@ -229,15 +231,17 @@ end
 --  GRAVAÇÃO
 -- ══════════════════════════════════════════════════════════════
 local function logPlayerToClan(player, clan)
+    -- Guard: player pode ter saído antes de ser processado
+    if not player or not player.Parent then return end
     local uid = player.UserId
+    if not uid or uid == 0 then return end
+
     if clan.logs[uid] then
-        -- Jogador já visto antes: atualiza sessão
         local info = clan.logs[uid]
         info.joinTick = tick()
         info.online   = true
         info.sessions = (info.sessions or 1) + 1
     else
-        -- Novo jogador do clã
         clan.total = (clan.total or 0) + 1
         clan.logs[uid] = {
             displayName  = player.DisplayName,
@@ -254,8 +258,31 @@ local function logPlayerToClan(player, clan)
 end
 
 local function checkAll(player)
+    if not player or not player.Parent then return end
+    local uid = player.UserId
+    if not uid or uid == 0 then return end
+    local dn = player.DisplayName or ""
+
+    -- Só adia se DisplayName estiver completamente vazio (não carregou ainda)
+    -- DisplayName == Name é válido: é um player sem DisplayName customizado
+    if dn == "" then
+        task.delay(2, function()
+            if player and player.Parent then
+                local dn2 = player.DisplayName or ""
+                if dn2 ~= "" then
+                    for _, clan in ipairs(clans) do
+                        if matchesClan(dn2, clan) then
+                            logPlayerToClan(player, clan)
+                        end
+                    end
+                end
+            end
+        end)
+        return
+    end
+
     for _, clan in ipairs(clans) do
-        if matchesClan(player.DisplayName, clan) then
+        if matchesClan(dn, clan) then
             logPlayerToClan(player, clan)
         end
     end
@@ -263,8 +290,11 @@ end
 
 local function onLeave(player)
     if not isRecording then return end
+    if not player then return end
+    local uid = player.UserId
+    if not uid or uid == 0 then return end
     for _, clan in ipairs(clans) do
-        local info = clan.logs[player.UserId]
+        local info = clan.logs[uid]
         if info and info.online and info.joinTick then
             info.totalSeconds = info.totalSeconds + (tick() - info.joinTick)
             info.joinTick     = nil
@@ -820,6 +850,8 @@ end)
 -- ══════════════════════════════════════════════════════════════
 task.spawn(function()
     local autoSaveTimer = 0
+    local rescanTimer   = 0
+    local watchdogTimer = 0
     while ScreenGui.Parent do
         task.wait(1)
         local H, M, S = nowH(), nowM(), nowS()
@@ -827,14 +859,55 @@ task.spawn(function()
 
         if isRecording then
             autoSaveTimer = autoSaveTimer + 1
+            rescanTimer   = rescanTimer   + 1
+            watchdogTimer = watchdogTimer + 1
+
+            -- Auto-save
             if autoSaveTimer >= CFG.AUTOSAVE_IV then
                 autoSaveTimer = 0
                 saveAllClans(false)
             end
+
+            -- Re-scan: a cada 15s varre todos os players do servidor
+            -- só processa quem AINDA NÃO foi logado (não sobrescreve joinTick de quem já está)
+            if rescanTimer >= 15 then
+                rescanTimer = 0
+                for _, p in ipairs(Players:GetPlayers()) do
+                    pcall(function()
+                        if not p or not p.Parent then return end
+                        local uid = p.UserId
+                        local jaLogado = false
+                        for _, clan in ipairs(clans) do
+                            if clan.logs[uid] then jaLogado = true; break end
+                        end
+                        if not jaLogado then checkAll(p) end
+                    end)
+                end
+            end
+
+            -- Watchdog: a cada 5s verifica se as conexões ainda estão vivas
+            -- se morreram, reconecta na hora
+            if watchdogTimer >= 5 then
+                watchdogTimer = 0
+                if not playerAddedConn or not playerAddedConn.Connected then
+                    warn("[Logger] ⚠ playerAddedConn morreu — reconectando...")
+                    playerAddedConn = Players.PlayerAdded:Connect(function(p)
+                        task.wait(1)
+                        checkAll(p)
+                    end)
+                end
+                if not playerRemovedConn or not playerRemovedConn.Connected then
+                    warn("[Logger] ⚠ playerRemovedConn morreu — reconectando...")
+                    playerRemovedConn = Players.PlayerRemoving:Connect(function(p) onLeave(p) end)
+                end
+            end
+
             statusLbl.Text      = "🔴 Gravando... " .. fmtDur(tick() - recStart)
             statusLbl.TextColor3 = Color3.fromRGB(255,80,80)
         else
             autoSaveTimer = 0
+            rescanTimer   = 0
+            watchdogTimer = 0
         end
 
         if activeClan then
