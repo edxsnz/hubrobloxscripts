@@ -290,7 +290,7 @@ local function startRecording()
 
     for _, p in ipairs(Players:GetPlayers()) do checkAll(p) end
 
-    playerAddedConn   = Players.PlayerAdded:Connect(function(p)
+    playerAddedConn = Players.PlayerAdded:Connect(function(p)
         task.wait(1)
         checkAll(p)
     end)
@@ -790,12 +790,7 @@ end)
 
 removeBtn.MouseButton1Click:Connect(function()
     if not activeClan then return end
-
-    -- Se estiver gravando, salva o clã antes de remover
-    if isRecording then
-        saveClan(activeClan, true)
-    end
-
+    if isRecording then saveClan(activeClan, true) end
     for i, c in ipairs(clans) do
         if c == activeClan then table.remove(clans, i); break end
     end
@@ -986,18 +981,26 @@ task.spawn(function()
             watchdogTimer = 0
         end
 
+        -- Atualiza contador e lista a cada tick sem condição
+        -- refreshList() já trata activeClan == nil internamente
+        -- Sem isso os tempos só atualizavam ao clicar no clã
         if activeClan then
             clanCountLbl.Text = "👥 " .. (activeClan.total or 0) .. " membros"
-            refreshList()
         end
+        refreshList()
 
         if autoEnabled then
-            -- Disparo de INÍCIO (uso único — só dispara uma vez por sessão)
+            -- Disparo de INICIO: forca parada de qualquer gravacao em curso
+            -- antes de iniciar, garantindo limpeza total mesmo que o usuario
+            -- tenha gravado manualmente e nao tenha parado.
             if not autoStartFired and H == autoStartH and M == autoStartM then
                 autoStartFired = true
 
-                if isRecording then stopRecording() end
+                if isRecording then
+                    stopRecording()
+                end
 
+                -- Limpa explicitamente todos os dados de todos os clas
                 for _, c in ipairs(clans) do
                     c.logs  = {}
                     c.total = 0
@@ -1010,15 +1013,14 @@ task.spawn(function()
                 recBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
                 statusLbl.Text          = "🔴 Gravando..."
                 statusLbl.TextColor3    = Color3.fromRGB(255,80,80)
-                schedInfo.Text          = string.format("▶ Iniciado às %02d:%02d! (%d clã(s))", H, M, #clans)
+                schedInfo.Text          = string.format("▶ Iniciado automaticamente às %02d:%02d! (%d clã(s))", H, M, #clans)
                 schedInfo.TextColor3    = Color3.fromRGB(100,255,150)
             end
 
-            -- Disparo de PARADA (uso único — dispara e desativa o agendamento)
+            -- Disparo de PARADA
             if not autoStopFired and H == autoStopH and M == autoStopM then
-                autoStopFired = true
-
                 if isRecording then
+                    autoStopFired = true
                     stopRecording()
                     recBtn.Text             = "⏺  INICIAR GRAVAÇÃO  (todos os clãs)"
                     recBtn.BackgroundColor3 = Color3.fromRGB(35,165,70)
@@ -1026,16 +1028,17 @@ task.spawn(function()
                     statusLbl.TextColor3    = Color3.fromRGB(100,255,100)
                     local total = 0
                     for _, c in ipairs(clans) do total = total + (c.total or 0) end
-                    schedInfo.Text       = string.format("⏹ Finalizado às %02d:%02d! Total: %d membro(s)", H, M, total)
+                    schedInfo.Text       = string.format("⏹ Finalizado às %02d:%02d! Total geral: %d membro(s)", H, M, total)
                     schedInfo.TextColor3 = Color3.fromRGB(255,200,80)
                 end
+            end
 
-                -- Agendamento cumpriu o ciclo — desativa sozinho
-                autoEnabled = false
-                sH.TextEditable = true; sM.TextEditable = true
-                eH.TextEditable = true; eM.TextEditable = true
-                autoBtn.Text             = "📅 Ativar"
-                autoBtn.BackgroundColor3 = Color3.fromRGB(55,85,200)
+            -- Reset dos flags ao sair do minuto de parada
+            if autoStartFired and autoStopFired then
+                if not (H == autoStopH and M == autoStopM) then
+                    autoStartFired = false
+                    autoStopFired  = false
+                end
             end
         end
     end
