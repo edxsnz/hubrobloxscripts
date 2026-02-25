@@ -40,7 +40,7 @@ local UserInputService = game:GetService("UserInputService")
 -- ══════════════════════════════════════════════════════════════
 local CFG = {
     LOG_FOLDER  = "ClanLogs",
-    AUTOSAVE_IV = 30,
+    AUTOSAVE_IV = 5,
 }
 
 -- ══════════════════════════════════════════════════════════════
@@ -624,25 +624,6 @@ schedInfo = mkLabel(Main, 12, 622, WW-24, 22, "", 10, Color3.fromRGB(180,180,180
 schedInfo.TextXAlignment = Enum.TextXAlignment.Center
 
 -- ══════════════════════════════════════════════════════════════
---  MINI-LABEL FLUTUANTE (aparece quando o menu está oculto)
--- ══════════════════════════════════════════════════════════════
-local toggleHint = Instance.new("TextLabel")
-toggleHint.Size                   = UDim2.new(0, 170, 0, 30)
-toggleHint.Position               = UDim2.new(0, 12, 1, -46)
-toggleHint.BackgroundColor3       = Color3.fromRGB(14, 14, 28)
-toggleHint.BackgroundTransparency = 0.2
-toggleHint.BorderSizePixel        = 0
-toggleHint.Text                   = "[ G ]  Abrir Clan Logger"
-toggleHint.TextColor3             = Color3.fromRGB(130, 190, 255)
-toggleHint.TextSize               = 12
-toggleHint.Font                   = Enum.Font.GothamBold
-toggleHint.TextXAlignment         = Enum.TextXAlignment.Center
-toggleHint.Visible                = false
-toggleHint.Parent                 = ScreenGui
-corner(toggleHint, 8)
-stroke(toggleHint, Color3.fromRGB(55, 95, 230), 1.5)
-
--- ══════════════════════════════════════════════════════════════
 --  LÓGICA DAS ABAS
 -- ══════════════════════════════════════════════════════════════
 local tabButtons = {}
@@ -867,20 +848,28 @@ xBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
+
 -- ══════════════════════════════════════════════════════════════
---  SAVE DE EMERGÊNCIA — chamado quando o jogo fecha/sai
---  Garante que o arquivo final é salvo mesmo sem clicar em parar
+--  MINI-LABEL FLUTUANTE (aparece quando o menu está oculto)
 -- ══════════════════════════════════════════════════════════════
-game:BindToClose(function()
-    if isRecording then
-        stopRecording()
-    end
-end)
+local toggleHint = Instance.new("TextLabel")
+toggleHint.Size                   = UDim2.new(0, 170, 0, 30)
+toggleHint.Position               = UDim2.new(0, 12, 1, -46)
+toggleHint.BackgroundColor3       = Color3.fromRGB(14, 14, 28)
+toggleHint.BackgroundTransparency = 0.2
+toggleHint.BorderSizePixel        = 0
+toggleHint.Text                   = "[ G ]  Abrir Clan Logger"
+toggleHint.TextColor3             = Color3.fromRGB(130, 190, 255)
+toggleHint.TextSize               = 12
+toggleHint.Font                   = Enum.Font.GothamBold
+toggleHint.TextXAlignment         = Enum.TextXAlignment.Center
+toggleHint.Visible                = false
+toggleHint.Parent                 = ScreenGui
+corner(toggleHint, 8)
+stroke(toggleHint, Color3.fromRGB(55, 95, 230), 1.5)
 
 -- ══════════════════════════════════════════════════════════════
 --  TOGGLE VISIBILIDADE — tecla G
---  • Ignora se o usuário estiver digitando em algum TextBox
---  • Mostra/esconde mini-hint quando o menu está oculto
 -- ══════════════════════════════════════════════════════════════
 local menuVisible = true
 
