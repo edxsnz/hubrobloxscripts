@@ -547,23 +547,17 @@ mkLabel(tHead, nameW,   0, 64,    22, "ENTRADA",  10, Color3.fromRGB(155,155,200
 mkLabel(tHead, colW-80, 0, 76,    22, "TEMPO",    10, Color3.fromRGB(155,155,200), Enum.Font.GothamBold, Enum.TextXAlignment.Right)
 
 -- ══════════════════════════════════════════════════════════════
---  LISTA DE JOGADORES — ScrollingFrame dinâmico (sem limite)
---  Rows criadas sob demanda via pool; CanvasSize atualizado
---  automaticamente para suportar qualquer número de membros.
+--  LISTA DE JOGADORES
 -- ══════════════════════════════════════════════════════════════
-local ROW_H  = 24    -- altura de cada linha em px
-local LIST_H = 160   -- altura visível da área de scroll
-
 local Scroll = Instance.new("ScrollingFrame")
-Scroll.Size                 = UDim2.new(1, -24, 0, LIST_H)
+Scroll.Size                 = UDim2.new(1, -24, 0, 120)
 Scroll.Position             = UDim2.new(0, 12, 0, 322)
 Scroll.BackgroundColor3     = Color3.fromRGB(13, 13, 24)
 Scroll.BorderSizePixel      = 0
-Scroll.ScrollBarThickness   = 4
+Scroll.ScrollBarThickness   = 3
 Scroll.ScrollBarImageColor3 = Color3.fromRGB(70, 90, 200)
 Scroll.CanvasSize           = UDim2.new(0, 0, 0, 0)
-Scroll.ScrollingDirection   = Enum.ScrollingDirection.Y
-Scroll.ElasticBehavior      = Enum.ElasticBehavior.Never
+Scroll.AutomaticCanvasSize  = Enum.AutomaticSize.Y
 Scroll.Parent               = Main
 corner(Scroll, 6)
 stroke(Scroll, Color3.fromRGB(30, 30, 58), 1)
@@ -579,31 +573,26 @@ lPad.PaddingLeft  = UDim.new(0, 4)
 lPad.PaddingRight = UDim.new(0, 4)
 lPad.Parent       = Scroll
 
--- Pool de rows: cresce conforme necessidade, nunca destroi
-local rowPool = {}
+-- 32 linhas fixas (cobre qualquer invasão com folga)
+local rows = {}
+for i = 1, 32 do
+    local row = Instance.new("Frame")
+    row.Size             = UDim2.new(1, 0, 0, 22)
+    row.BorderSizePixel  = 0
+    row.LayoutOrder      = i
+    row.BackgroundColor3 = (i % 2 == 0) and Color3.fromRGB(17,17,32) or Color3.fromRGB(13,13,24)
+    row.Visible          = false
+    row.Parent           = Scroll
+    corner(row, 3)
 
-local function getRow(idx)
-    if not rowPool[idx] then
-        local row = Instance.new("Frame")
-        row.Size             = UDim2.new(1, 0, 0, ROW_H)
-        row.BorderSizePixel  = 0
-        row.LayoutOrder      = idx
-        row.BackgroundColor3 = (idx % 2 == 0) and Color3.fromRGB(17,17,32) or Color3.fromRGB(13,13,24)
-        row.Visible          = false
-        row.Parent           = Scroll
-        corner(row, 3)
-
-        local dot   = mkLabel(row, 3,        0, 14,         ROW_H, "🟢", 10, Color3.fromRGB(255,255,255))
-        local name  = mkLabel(row, 17,       0, nameW - 14, ROW_H, "",   10, Color3.fromRGB(220,220,220))
-        local entry = mkLabel(row, nameW,    0, 64,         ROW_H, "",   10, Color3.fromRGB(140,180,140))
-        local dur   = mkLabel(row, colW-80,  0, 78,         ROW_H, "",   10, Color3.fromRGB(255,210,80), Enum.Font.GothamBold, Enum.TextXAlignment.Right)
-
-        rowPool[idx] = { frame = row, dot = dot, name = name, entry = entry, dur = dur }
-    end
-    return rowPool[idx]
+    local dot   = mkLabel(row, 3,        0, 14,         22, "🟢", 10, Color3.fromRGB(255,255,255))
+    local name  = mkLabel(row, 17,       0, nameW - 14, 22, "",   10, Color3.fromRGB(220,220,220))
+    local entry = mkLabel(row, nameW,    0, 64,         22, "",   10, Color3.fromRGB(140,180,140))
+    local dur   = mkLabel(row, colW-80,  0, 78,         22, "",   10, Color3.fromRGB(255,210,80), Enum.Font.GothamBold, Enum.TextXAlignment.Right)
+    rows[i] = { frame = row, dot = dot, name = name, entry = entry, dur = dur }
 end
 
-mkDiv(Main, 322 + LIST_H + 4)
+mkDiv(Main, 448)
 
 -- ══════════════════════════════════════════════════════════════
 --  BOTÃO GRAVAR
@@ -660,43 +649,27 @@ local tabButtons = {}
 
 local function refreshList()
     if not activeClan then
-        for _, r in ipairs(rowPool) do r.frame.Visible = false end
-        Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+        for _, r in ipairs(rows) do r.frame.Visible = false end
         return
     end
-
-    -- Monta lista ordenada por ordem de entrada
     local ord = {}
     for uid, info in pairs(activeClan.logs) do
         ord[#ord+1] = { uid = uid, info = info }
     end
     table.sort(ord, function(a, b) return (a.info.idx or 0) < (b.info.idx or 0) end)
-
-    local total = #ord
-
-    -- Preenche / cria rows dinamicamente
-    for i = 1, total do
-        local e    = ord[i]
-        local info = e.info
-        local r    = getRow(i)
-
-        r.dot.Text      = info.online and "🟢" or "🔴"
-        r.name.Text     = info.displayName
-        r.entry.Text    = info.entryTime
-        r.dur.Text      = fmtDur(getCurrentSecs(info))
-        r.frame.Visible = true
+    for i, r in ipairs(rows) do
+        local e = ord[i]
+        if e then
+            local info = e.info
+            r.dot.Text      = info.online and "🟢" or "🔴"
+            r.name.Text     = info.displayName
+            r.entry.Text    = info.entryTime
+            r.dur.Text      = fmtDur(getCurrentSecs(info))
+            r.frame.Visible = true
+        else
+            r.frame.Visible = false
+        end
     end
-
-    -- Esconde linhas do pool que estão além do total atual
-    for i = total + 1, #rowPool do
-        rowPool[i].frame.Visible = false
-    end
-
-    -- Recalcula CanvasSize para habilitar o scroll corretamente
-    local spacing = 2   -- Padding do UIListLayout
-    local padTop  = 3
-    local totalH  = padTop + total * ROW_H + math.max(0, total - 1) * spacing
-    Scroll.CanvasSize = UDim2.new(0, 0, 0, totalH)
 end
 
 local function selectClan(clan)
@@ -912,9 +885,7 @@ end)
 local menuVisible = true
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    -- Não bloqueia por gameProcessed: no executor o input pode vir marcado
-    -- como processado mesmo sendo do usuário. Apenas ignora se estiver digitando.
-    if UserInputService:GetFocusedTextBox() then return end
+    if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.G then
         menuVisible        = not menuVisible
         Main.Visible       = menuVisible
