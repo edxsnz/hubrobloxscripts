@@ -890,15 +890,14 @@ task.spawn(function()
     local rescanTimer   = 0
     local watchdogTimer = 0
     while ScreenGui.Parent do
-        task.wait(0.5)
-        pcall(function()
+        task.wait(1)
         local H, M, S = nowH(), nowM(), nowS()
         clockLbl.Text = string.format("🕐 %02d:%02d:%02d", H, M, S)
 
         if isRecording then
-            autoSaveTimer = autoSaveTimer + 0.5
-            rescanTimer   = rescanTimer   + 0.5
-            watchdogTimer = watchdogTimer + 0.5
+            autoSaveTimer = autoSaveTimer + 1
+            rescanTimer   = rescanTimer   + 1
+            watchdogTimer = watchdogTimer + 1
 
             if autoSaveTimer >= CFG.AUTOSAVE_IV then
                 autoSaveTimer = 0
@@ -935,7 +934,7 @@ task.spawn(function()
                 end
             end
 
-            statusLbl.Text       = "🔴 Gravando... " .. fmtDur(tick() - recStart)
+            statusLbl.Text      = "🔴 Gravando... " .. fmtDur(tick() - recStart)
             statusLbl.TextColor3 = Color3.fromRGB(255,80,80)
         else
             autoSaveTimer = 0
@@ -945,29 +944,19 @@ task.spawn(function()
 
         if activeClan then
             clanCountLbl.Text = "👥 " .. (activeClan.total or 0) .. " membros"
+            refreshList()
         end
-        refreshList()
 
         if autoEnabled then
-            -- Disparo de INICIO: forca parada de qualquer gravacao em curso
-            -- antes de iniciar, garantindo limpeza total mesmo que o usuario
-            -- tenha gravado manualmente e nao tenha parado.
             if not autoStartFired and H == autoStartH and M == autoStartM then
                 autoStartFired = true
-
-                if isRecording then
-                    stopRecording()
-                end
-
-                -- Limpa explicitamente todos os dados de todos os clas
+                if isRecording then stopRecording() end
                 for _, c in ipairs(clans) do
                     c.logs  = {}
                     c.total = 0
                     c.file  = ""
                 end
-
                 startRecording()
-
                 recBtn.Text             = "⏹  PARAR GRAVAÇÃO  (todos os clãs)"
                 recBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
                 statusLbl.Text          = "🔴 Gravando..."
@@ -975,8 +964,6 @@ task.spawn(function()
                 schedInfo.Text          = string.format("▶ Iniciado automaticamente às %02d:%02d! (%d clã(s))", H, M, #clans)
                 schedInfo.TextColor3    = Color3.fromRGB(100,255,150)
             end
-
-            -- Disparo de PARADA
             if not autoStopFired and H == autoStopH and M == autoStopM then
                 if isRecording then
                     autoStopFired = true
@@ -991,8 +978,6 @@ task.spawn(function()
                     schedInfo.TextColor3 = Color3.fromRGB(255,200,80)
                 end
             end
-
-            -- Reset dos flags ao sair do minuto de parada
             if autoStartFired and autoStopFired then
                 if not (H == autoStopH and M == autoStopM) then
                     autoStartFired = false
@@ -1000,7 +985,6 @@ task.spawn(function()
                 end
             end
         end
-        end) -- pcall
     end
 end)
 
