@@ -912,7 +912,8 @@ end)
 local menuVisible = true
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
+    -- Não bloqueia por gameProcessed: no executor o input pode vir marcado
+    -- como processado mesmo sendo do usuário. Apenas ignora se estiver digitando.
     if UserInputService:GetFocusedTextBox() then return end
     if input.KeyCode == Enum.KeyCode.G then
         menuVisible        = not menuVisible
@@ -929,14 +930,15 @@ task.spawn(function()
     local rescanTimer   = 0
     local watchdogTimer = 0
     while ScreenGui.Parent do
-        task.wait(1)
+        task.wait(0.5)
+        pcall(function()
         local H, M, S = nowH(), nowM(), nowS()
         clockLbl.Text = string.format("🕐 %02d:%02d:%02d", H, M, S)
 
         if isRecording then
-            autoSaveTimer = autoSaveTimer + 1
-            rescanTimer   = rescanTimer   + 1
-            watchdogTimer = watchdogTimer + 1
+            autoSaveTimer = autoSaveTimer + 0.5
+            rescanTimer   = rescanTimer   + 0.5
+            watchdogTimer = watchdogTimer + 0.5
 
             if autoSaveTimer >= CFG.AUTOSAVE_IV then
                 autoSaveTimer = 0
@@ -981,9 +983,6 @@ task.spawn(function()
             watchdogTimer = 0
         end
 
-        -- Atualiza contador e lista a cada tick sem condição
-        -- refreshList() já trata activeClan == nil internamente
-        -- Sem isso os tempos só atualizavam ao clicar no clã
         if activeClan then
             clanCountLbl.Text = "👥 " .. (activeClan.total or 0) .. " membros"
         end
@@ -1041,6 +1040,7 @@ task.spawn(function()
                 end
             end
         end
+        end) -- pcall
     end
 end)
 
