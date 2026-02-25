@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.0.4"
+local HUB_VERSION = "0.0.5"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
