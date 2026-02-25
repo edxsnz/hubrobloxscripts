@@ -222,6 +222,8 @@ local function checkAll(player)
 
     if dn == "" then
         task.delay(2, function()
+            -- Só processa se ainda estiver gravando e o player ainda estiver no servidor
+            if not isRecording then return end
             if player and player.Parent then
                 local dn2 = player.DisplayName or ""
                 if dn2 ~= "" then
@@ -271,6 +273,10 @@ local function startRecording()
     if isRecording then return end
     if #clans == 0 then return end
 
+    -- Garante que não há conexões órfãs de sessões anteriores
+    if playerAddedConn   then playerAddedConn:Disconnect();   playerAddedConn   = nil end
+    if playerRemovedConn then playerRemovedConn:Disconnect(); playerRemovedConn = nil end
+
     ensureFolder()
     isRecording  = true
     recStart     = tick()
@@ -284,7 +290,7 @@ local function startRecording()
 
     for _, p in ipairs(Players:GetPlayers()) do checkAll(p) end
 
-    playerAddedConn = Players.PlayerAdded:Connect(function(p)
+    playerAddedConn   = Players.PlayerAdded:Connect(function(p)
         task.wait(1)
         checkAll(p)
     end)
@@ -419,7 +425,7 @@ end
 --  JANELA PRINCIPAL
 -- ══════════════════════════════════════════════════════════════
 local WW = 450
-local WH = 628
+local WH = 648
 
 local Main = Instance.new("Frame")
 Main.Name             = "Main"
@@ -625,7 +631,7 @@ local eM = mkBox(Main, 212, 580, 44, 34, "00")
 local autoBtn = mkBtn(Main, WW-138, 580, 128, 34, "📅 Ativar", Color3.fromRGB(55,85,200), 13)
 autoBtn.AutomaticSize = Enum.AutomaticSize.None
 
-schedInfo = mkLabel(Main, 12, 620, WW-24, 20, "", 10, Color3.fromRGB(180,180,180))
+schedInfo = mkLabel(Main, 12, 622, WW-24, 22, "", 10, Color3.fromRGB(180,180,180))
 schedInfo.TextXAlignment = Enum.TextXAlignment.Center
 
 -- ══════════════════════════════════════════════════════════════
@@ -784,10 +790,26 @@ end)
 
 removeBtn.MouseButton1Click:Connect(function()
     if not activeClan then return end
-    if isRecording then saveClan(activeClan, true) end
+
+    -- Se estiver gravando, salva o clã antes de remover
+    if isRecording then
+        saveClan(activeClan, true)
+    end
+
     for i, c in ipairs(clans) do
         if c == activeClan then table.remove(clans, i); break end
     end
+
+    -- Se removeu o último clã durante gravação, para tudo para evitar
+    -- conexões e watchdog ativos sem nenhum clã para monitorar
+    if isRecording and #clans == 0 then
+        stopRecording()
+        recBtn.Text             = "⏺  INICIAR GRAVAÇÃO  (todos os clãs)"
+        recBtn.BackgroundColor3 = Color3.fromRGB(35,165,70)
+        statusLbl.Text          = "✅ Finalizado!"
+        statusLbl.TextColor3    = Color3.fromRGB(100,255,100)
+    end
+
     activeClan = clans[1] or nil
     selectClan(activeClan)
     rebuildTabs()
@@ -804,6 +826,10 @@ recBtn.MouseButton1Click:Connect(function()
         recBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
         statusLbl.Text          = "🔴 Gravando..."
         statusLbl.TextColor3    = Color3.fromRGB(255,80,80)
+        -- Atualiza o path do arquivo na UI logo após iniciar
+        if activeClan then
+            clanFileLbl.Text = activeClan.file ~= "" and activeClan.file or ""
+        end
     else
         stopRecording()
         recBtn.Text             = "⏺  INICIAR GRAVAÇÃO  (todos os clãs)"
@@ -822,14 +848,41 @@ autoBtn.MouseButton1Click:Connect(function()
         if not (sh and sm2 and eh2 and em2) or sh > 23 or sm2 > 59 or eh2 > 23 or em2 > 59 then
             schedInfo.Text = "⚠ Horários inválidos!"; schedInfo.TextColor3 = Color3.fromRGB(255,100,100); return
         end
+        local startTotalMin = sh * 60 + sm2
+        local stopTotalMin  = eh2 * 60 + em2
+        if stopTotalMin <= startTotalMin then
+            schedInfo.Text = "⚠ Fim deve ser depois do Início!"; schedInfo.TextColor3 = Color3.fromRGB(255,100,100); return
+        end
+
         autoStartH, autoStartM, autoStopH, autoStopM = sh, sm2, eh2, em2
         autoEnabled = true; autoStartFired = false; autoStopFired = false
         sH.TextEditable = false; sM.TextEditable = false
         eH.TextEditable = false; eM.TextEditable = false
         autoBtn.Text             = "❌ Cancelar"
         autoBtn.BackgroundColor3 = Color3.fromRGB(180,50,50)
-        schedInfo.Text       = string.format("✅ Agendado: %02d:%02d → %02d:%02d  |  %d clã(s)", sh, sm2, eh2, em2, #clans)
-        schedInfo.TextColor3 = Color3.fromRGB(100,255,150)
+
+        -- Se o horário de início já passou, começa a gravar imediatamente
+        local nowTotalMin = nowH() * 60 + nowM()
+        if startTotalMin <= nowTotalMin then
+            autoStartFired = true
+            if isRecording then stopRecording() end
+            for _, c in ipairs(clans) do
+                c.logs  = {}
+                c.total = 0
+                c.file  = ""
+            end
+            startRecording()
+            recBtn.Text             = "⏹  PARAR GRAVAÇÃO  (todos os clãs)"
+            recBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+            statusLbl.Text          = "🔴 Gravando..."
+            statusLbl.TextColor3    = Color3.fromRGB(255,80,80)
+            if activeClan then clanFileLbl.Text = activeClan.file end
+            schedInfo.Text       = string.format("▶ Gravando agora! Para às %02d:%02d  |  %d clã(s)", eh2, em2, #clans)
+            schedInfo.TextColor3 = Color3.fromRGB(100,255,150)
+        else
+            schedInfo.Text       = string.format("✅ Agendado: %02d:%02d → %02d:%02d  |  %d clã(s)", sh, sm2, eh2, em2, #clans)
+            schedInfo.TextColor3 = Color3.fromRGB(100,255,150)
+        end
     else
         autoEnabled = false
         sH.TextEditable = true; sM.TextEditable = true
@@ -844,6 +897,16 @@ end)
 xBtn.MouseButton1Click:Connect(function()
     if isRecording then stopRecording() end
     ScreenGui:Destroy()
+end)
+
+-- ══════════════════════════════════════════════════════════════
+--  SAVE DE EMERGÊNCIA — chamado quando o jogo fecha/sai
+--  Garante que o arquivo final é salvo mesmo sem clicar em parar
+-- ══════════════════════════════════════════════════════════════
+game:BindToClose(function()
+    if isRecording then
+        stopRecording()
+    end
 end)
 
 -- ══════════════════════════════════════════════════════════════
@@ -929,25 +992,50 @@ task.spawn(function()
         end
 
         if autoEnabled then
+            -- Disparo de INÍCIO (uso único — só dispara uma vez por sessão)
             if not autoStartFired and H == autoStartH and M == autoStartM then
                 autoStartFired = true
+
+                if isRecording then stopRecording() end
+
+                for _, c in ipairs(clans) do
+                    c.logs  = {}
+                    c.total = 0
+                    c.file  = ""
+                end
+
                 startRecording()
+
                 recBtn.Text             = "⏹  PARAR GRAVAÇÃO  (todos os clãs)"
                 recBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
-                schedInfo.Text       = string.format("▶ Iniciado automaticamente às %02d:%02d! (%d clã(s))", H, M, #clans)
-                schedInfo.TextColor3 = Color3.fromRGB(100,255,150)
+                statusLbl.Text          = "🔴 Gravando..."
+                statusLbl.TextColor3    = Color3.fromRGB(255,80,80)
+                schedInfo.Text          = string.format("▶ Iniciado às %02d:%02d! (%d clã(s))", H, M, #clans)
+                schedInfo.TextColor3    = Color3.fromRGB(100,255,150)
             end
+
+            -- Disparo de PARADA (uso único — dispara e desativa o agendamento)
             if not autoStopFired and H == autoStopH and M == autoStopM then
+                autoStopFired = true
+
                 if isRecording then
-                    autoStopFired = true
                     stopRecording()
                     recBtn.Text             = "⏺  INICIAR GRAVAÇÃO  (todos os clãs)"
                     recBtn.BackgroundColor3 = Color3.fromRGB(35,165,70)
+                    statusLbl.Text          = "✅ Finalizado!"
+                    statusLbl.TextColor3    = Color3.fromRGB(100,255,100)
                     local total = 0
                     for _, c in ipairs(clans) do total = total + (c.total or 0) end
-                    schedInfo.Text       = string.format("⏹ Finalizado às %02d:%02d! Total geral: %d membro(s)", H, M, total)
+                    schedInfo.Text       = string.format("⏹ Finalizado às %02d:%02d! Total: %d membro(s)", H, M, total)
                     schedInfo.TextColor3 = Color3.fromRGB(255,200,80)
                 end
+
+                -- Agendamento cumpriu o ciclo — desativa sozinho
+                autoEnabled = false
+                sH.TextEditable = true; sM.TextEditable = true
+                eH.TextEditable = true; eM.TextEditable = true
+                autoBtn.Text             = "📅 Ativar"
+                autoBtn.BackgroundColor3 = Color3.fromRGB(55,85,200)
             end
         end
     end
