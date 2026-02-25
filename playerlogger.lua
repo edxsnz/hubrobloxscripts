@@ -853,6 +853,20 @@ xBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ══════════════════════════════════════════════════════════════
+--  TOGGLE VISIBILIDADE — tecla G
+-- ══════════════════════════════════════════════════════════════
+local UserInputService = game:GetService("UserInputService")
+local menuVisible = true
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.G then
+        menuVisible = not menuVisible
+        Main.Visible = menuVisible
+    end
+end)
+
+-- ══════════════════════════════════════════════════════════════
 --  LOOP PRINCIPAL (tick a cada 1s)
 -- ══════════════════════════════════════════════════════════════
 task.spawn(function()
