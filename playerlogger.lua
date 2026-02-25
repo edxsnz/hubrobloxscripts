@@ -170,6 +170,12 @@ local function buildContent(clan, isFinal)
     w("Fim            : " .. (isFinal and timeOnly() or "--"))
     w("Total logados  : " .. (clan.total or 0) .. " membro(s)")
     w(string.rep("═", 72))
+    w("")
+    w(string.rep("─", 72))
+    w("  ✦  Script criado por  edson_  (Discord: 1077067290945802271)")
+    w("  ✦  Roblox: edson6389  ·  ID: 183265855")
+    w("  ✦  Gerado em: " .. dateOnly() .. " às " .. timeOnly())
+    w(string.rep("─", 72))
 
     return table.concat(L, "\n") .. "\n"
 end
