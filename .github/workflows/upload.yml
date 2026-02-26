@@ -1,4 +1,4 @@
-name: Upload DLL
+name: Upload DLL and EXE
 
 on:
   workflow_dispatch:
@@ -6,6 +6,7 @@ on:
     branches: [ "main" ]
     paths:
       - 'GrandPieceOnlineGPO.dll'
+      - 'Retarded.exe'
 
 jobs:
   upload:
@@ -15,8 +16,10 @@ jobs:
       - name: Baixar código
         uses: actions/checkout@v4
 
-      - name: Enviar DLL como artefato
+      - name: Enviar arquivos como artefato
         uses: actions/upload-artifact@v4
         with:
           name: build
-          path: GrandPieceOnlineGPO.dll
+          path: |
+            GrandPieceOnlineGPO.dll
+            Retarded.exe
