@@ -1,6 +1,6 @@
 -- Delay inicial para verificar se há troca de place
 print("✅ Iniciando carregamento...")
-task.wait(10)
+task.wait(1)
 
 -- Função avançada de espera por carregamento completo
 local function waitForGameToFullyLoad()
@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.0.01"
+local HUB_VERSION = "0.0.03"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
@@ -39,7 +39,6 @@ local scripts = {
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
     },
     [7671049560] = { -- The Forge
-        --"https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/theforge.lua"
         "https://lumin-hub.lol/loader.lua"
     }
 }
@@ -54,10 +53,13 @@ local sharedGames = {
 }
 
 -- Scripts compartilhados
+-- Ordem importa: core primeiro, depois ui (que depende do core)
 local sharedScripts = {
     "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
     "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
-    "https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/playerlogger.lua"
+    -- Clan Logger separado em core + ui
+    "https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/playerlogger_core.lua",
+    "https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/playerlogger_ui.lua",
 }
 
 -- Cache para nomes dos jogos
@@ -74,7 +76,6 @@ local function getGameName(placeId)
     return "Unknown Game"
 end
 
--- Função para executar script (compatível com Potassium/executores)
 -- Compatibilidade cross-executor: HTTP
 local function httpGet(url)
     if syn and syn.request then
@@ -101,10 +102,13 @@ local function getLoader()
     return nil
 end
 
-local function runScript(url, scriptNumber, totalScripts, scriptName)
+-- runScript com opção de esperar conclusão (para scripts com dependência)
+local function runScript(url, scriptNumber, totalScripts, scriptName, waitForDone)
     print("📦 Executando script " ..
-        scriptNumber .. "/" .. totalScripts .. (scriptName and (" (" .. scriptName .. ")") or "") .. "...")
+        scriptNumber .. "/" .. totalScripts ..
+        (scriptName and (" (" .. scriptName .. ")") or "") .. "...")
 
+    local done = false
     local success, errorMsg = pcall(function()
         local content = httpGet(url)
         if not content or content == "" then error("HttpGet retornou vazio") end
@@ -112,28 +116,46 @@ local function runScript(url, scriptNumber, totalScripts, scriptName)
         local loader = getLoader()
         if not loader then error("Nenhum loader disponível") end
 
-        task.spawn(function()
+        if waitForDone then
+            -- executa na thread atual e espera terminar
             local func = loader(content)
             if func then
                 local ok, execErr = pcall(func)
                 if ok then
-                    print("✅ Script iniciado com sucesso (thread separada)")
+                    print("✅ Script concluído: " .. (scriptName or url))
                 else
                     warn("❌ Erro dentro do script:", execErr)
                 end
             else
-                warn("❌ Falha ao compilar script: loader retornou nil")
+                warn("❌ Falha ao compilar script")
             end
-        end)
+            done = true
+        else
+            task.spawn(function()
+                local func = loader(content)
+                if func then
+                    local ok, execErr = pcall(func)
+                    if ok then
+                        print("✅ Script iniciado (thread separada)")
+                    else
+                        warn("❌ Erro dentro do script:", execErr)
+                    end
+                else
+                    warn("❌ Falha ao compilar script: loader retornou nil")
+                end
+                done = true
+            end)
+        end
     end)
 
     if success then
-        print("🟢 Loader enviado para execução")
+        print("🟢 Loader enviado: " .. (scriptName or "script " .. scriptNumber))
     else
         warn("❌ Falha ao carregar script:", errorMsg)
     end
 
     if scriptNumber < totalScripts then task.wait(SCRIPT_DELAY) end
+    return done
 end
 
 -- Banner de inicialização
@@ -172,9 +194,11 @@ end
 
 local totalScripts = #scriptList
 for i, url in ipairs(scriptList) do
-    runScript(url, i, totalScripts, nil)
+    -- playerlogger_core precisa terminar antes de ui carregar
+    local isCore = url:find("playerlogger_core")
+    runScript(url, i, totalScripts, nil, isCore)
 end
 
 print("\n" .. string.rep("=", 50))
-print("✅ " .. totalScripts .. " scripts " .. scriptType .. " injetados com sucesso!")
+print("✅ " .. totalScripts .. " scripts " .. scriptType .. " injetados!")
 print(string.rep("=", 50))
