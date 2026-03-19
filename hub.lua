@@ -32,29 +32,16 @@ local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
 local scripts = {
-    --[[
-    [994732206] = { -- Blox Fruits
-        "https://raw.githubusercontent.com/debunked69/Solixreworkkeysystem/refs/heads/main/solix%20new%20keyui.lua"
-    },
     [7326934954] = { -- 99 Nights in the Forest
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
-    },
-    [7671049560] = { -- The Forge
-        --"https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/theforge.lua"
-        "https://lumin-hub.lol/loader.lua"
     }
-    ]]
 }
 
 -- Jogos que compartilham os mesmos scripts
 local sharedGames = {
-    2355999843 -- Salon de Fiestas
---[[
-    7513986953, -- Step Music
-    7907925158, -- Myster
-    2977417782, -- Snow Party
-    9090968990  -- Star Rave
-]]
+    65241, -- Natural Disaster Survival
+    2355999843, -- Salon de Fiestas
+    7513986953 -- Step Music
 }
 
 -- Scripts compartilhados
