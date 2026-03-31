@@ -27,16 +27,13 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1"
+local HUB_VERSION = "0.1.1"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
 local scripts = {
     [7326934954] = { -- 99 Nights in the Forest
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
-    },
-    [9186719164] = { -- Sailor Piece
-        "http://luminon.top/loader.lua"
     }
 }
 
