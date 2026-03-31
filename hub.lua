@@ -1,6 +1,6 @@
 -- Delay inicial para verificar se há troca de place
 print("✅ Iniciando carregamento...")
-task.wait(1)
+task.wait(5)
 
 -- Função avançada de espera por carregamento completo
 local function waitForGameToFullyLoad()
@@ -27,20 +27,25 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.0.05"
+local HUB_VERSION = "0.1"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
 local scripts = {
     [7326934954] = { -- 99 Nights in the Forest
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
+    },
+    [9186719164] = { -- Sailor Piece
+        "http://luminon.top/loader.lua"
     }
 }
 
 -- Jogos que compartilham os mesmos scripts
 local sharedGames = {
     65241, -- Natural Disaster Survival
-    2355999843, -- Salon de Fiestas
+  --2355999843, -- Salon de Fiestas
+    4142544848, -- Salon test
+    6842639527, -- [TL] Salon de Fiestas
     7513986953 -- Step Music
 }
 
