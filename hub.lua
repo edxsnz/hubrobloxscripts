@@ -1,6 +1,6 @@
 -- Delay inicial para verificar se há troca de place
 print("✅ Iniciando carregamento...")
-task.wait(5)
+task.wait(10)
 
 -- Função avançada de espera por carregamento completo
 local function waitForGameToFullyLoad()
@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.1"
+local HUB_VERSION = "0.1.2"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
