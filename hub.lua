@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.1.2"
+local HUB_VERSION = "0.1.3"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
@@ -37,25 +37,10 @@ local scripts = {
     }
 }
 
--- Jogos que compartilham os mesmos scripts
-local sharedGames = {
-    65241, -- Natural Disaster Survival
-  --2355999843, -- Salon de Fiestas
-    4142544848, -- Salon test
-    6842639527, -- [TL] Salon de Fiestas
-    7513986953 -- Step Music
-}
-
--- Scripts compartilhados
--- Ordem importa: core primeiro, depois ui (que depende do core)
-local sharedScripts = {
+-- Scripts de fallback (executados em jogos sem scripts específicos)
+local fallbackScripts = {
     "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
     "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
-    -- Clan Logger separado em core + ui
---[[
-    "https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/playerlogger_core.lua",
-    "https://raw.githubusercontent.com/user404-hub/hubrobloxscripts/refs/heads/main/playerlogger_ui.lua",
-]]
 }
 
 -- Cache para nomes dos jogos
@@ -170,21 +155,11 @@ showBanner()
 local gameId = game.GameId
 local scriptList, scriptType = {}, ""
 
-local function inSharedGames(id)
-    for _, v in ipairs(sharedGames) do
-        if v == id then return true end
-    end
-    return false
-end
-
 if scripts[gameId] then
     scriptList = scripts[gameId]
     scriptType = "específicos"
-elseif inSharedGames(gameId) then
-    scriptList = sharedScripts
-    scriptType = "compartilhados"
 else
-    scriptList = { "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source" }
+    scriptList = fallbackScripts
     scriptType = "fallback"
 end
 
