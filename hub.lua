@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.2.2"
+local HUB_VERSION = "0.2.3"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
@@ -36,13 +36,14 @@ local scripts = {
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
     },
     [6739698191] = { -- Violence-District
+        "https://infyiff.github.io/resources/IY_FE.txt",
         "https://raw.githubusercontent.com/TexRBLX/Roblox-stuff/refs/heads/main/violence-district/script.lua"
     }
 }
 
 -- Scripts de fallback (executados em jogos sem scripts específicos)
 local fallbackScripts = {
-    "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
+    "https://infyiff.github.io/resources/IY_FE.txt",
     "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
 }
 
