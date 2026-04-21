@@ -27,7 +27,7 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.2.3"
+local HUB_VERSION = "0.2.4"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
@@ -38,6 +38,9 @@ local scripts = {
     [6739698191] = { -- Violence-District
         "https://infyiff.github.io/resources/IY_FE.txt",
         "https://raw.githubusercontent.com/TexRBLX/Roblox-stuff/refs/heads/main/violence-district/script.lua"
+    },
+    [1836146838] = { -- Bloxy Bingo
+        "https://www.pompomsaturin.site/bloxybingo.lua"
     }
 }
 
