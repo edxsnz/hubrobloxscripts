@@ -27,12 +27,13 @@ end
 waitForGameToFullyLoad()
 
 -- Configurações
-local HUB_VERSION = "0.2.5"
+local HUB_VERSION = "0.2.6"
 local SCRIPT_DELAY = 2
 
 -- SCRIPTS POR JOGO (IDs numéricos)
 local scripts = {
     [7326934954] = { -- 99 Nights in the Forest
+        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
         "https://raw.githubusercontent.com/caomod2077/Script/refs/heads/main/FoxnameHub.lua"
     },
     [6739698191] = { -- Violence-District
@@ -41,6 +42,7 @@ local scripts = {
     },
     [1836146838] = { -- Bloxy Bingo
         "https://infyiff.github.io/resources/IY_FE.txt",
+        "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua",
         "https://www.pompomsaturin.site/bloxybingo.lua"
     }
 }
